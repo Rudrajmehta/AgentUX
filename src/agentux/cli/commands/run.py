@@ -83,10 +83,19 @@ def run_command(
     config = load_config(_Path(config_path) if config_path else None)
     config.verbose = verbose
     config.browser.headless = headless
+    # CLI flags override config; empty string means "use config default"
     if model:
         config.backend.model = model
     if base_url:
         config.backend.base_url = base_url
+    if backend:
+        config.backend.name = backend
+    else:
+        backend = config.backend.name
+    if max_steps > 0:
+        config.max_steps = max_steps
+    else:
+        max_steps = config.max_steps
     if demo:
         config.demo_mode = True
         backend = "mock"

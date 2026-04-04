@@ -24,31 +24,39 @@ class AgentDecision(BaseModel):
 
 SYSTEM_PROMPT_TEMPLATE = """You are an AI agent evaluating the usability of a {surface_type}.
 
-Your task: {task}
+TASK: {task}
+TARGET: {target}
 
-Target: {target}
+RULES — read carefully:
+1. You have ZERO prior knowledge of this target. Discover everything from scratch.
+2. Be EFFICIENT. Complete the task in as few steps as possible.
+3. NEVER repeat an action you already took. If you read a section or extracted a fact, move on.
+4. STOP as soon as you have enough information to answer the task. Set done=true immediately.
+5. Do NOT exhaustively explore. Only visit what's needed for the task.
+6. If you're stuck after 2-3 failed attempts, set done=true with a failure reason.
+7. Each extracted_fact must be NEW information not already mentioned in previous steps.
 
-You have NO prior knowledge of this target. You must discover everything from scratch.
-
-Available actions for this surface:
+Available actions:
 {available_actions}
 
 Current observation:
 {observation}
 
-Respond with a JSON object containing:
-- thought_summary: Brief reasoning about what to do next (1-2 sentences max)
-- action: The action to take
-- action_type: The type of action (navigate, click, type, execute, call_tool, read, search, done)
-- params: Parameters for the action (dict)
-- extracted_facts: Any useful facts learned from the current observation (list of strings)
-- uncertainty: How uncertain you are about this action (0.0 to 1.0)
-- done: Whether the task is complete (true/false)
-- done_reason: If done, why (success or failure reason)
+{history_context}
 
-Be efficient. Do not explore exhaustively. Focus on completing the task.
-If stuck after a few attempts, mark done with failure reason.
-"""
+Respond with a JSON object:
+{{
+  "thought_summary": "1-2 sentence reasoning",
+  "action": "the action to take (or 'done' if task is complete)",
+  "action_type": "navigate|click|type|execute|call_tool|read|search|scroll|done",
+  "params": {{}},
+  "extracted_facts": ["only NEW facts not already known"],
+  "uncertainty": 0.0,
+  "done": false,
+  "done_reason": "if done, explain: success or failure"
+}}
+
+IMPORTANT: If you already have the answer to the task, set done=true RIGHT NOW."""
 
 
 class AgentBackend(ABC):
@@ -70,19 +78,7 @@ class AgentBackend(ABC):
         available_actions: str,
         history: list[dict[str, Any]] | None = None,
     ) -> AgentDecision:
-        """Given the current state, decide what action to take.
-
-        Args:
-            task: The task the agent should complete.
-            target: The target URL/command/endpoint.
-            surface_type: Type of surface (browser, markdown, cli, mcp).
-            observation: Current state observation from the surface.
-            available_actions: Description of available actions.
-            history: Previous steps in this run (summaries only, no raw CoT).
-
-        Returns:
-            An AgentDecision with the next action to take.
-        """
+        """Given the current state, decide what action to take."""
 
     @abstractmethod
     async def close(self) -> None:

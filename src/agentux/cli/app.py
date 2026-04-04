@@ -5,6 +5,7 @@ from __future__ import annotations
 import typer
 
 from agentux.cli.commands.alerts import app as alerts_app
+from agentux.cli.commands.config_cmd import app as config_app
 from agentux.cli.commands.monitor import app as monitor_app
 
 app = typer.Typer(
@@ -26,52 +27,63 @@ def _root_callback(ctx: typer.Context) -> None:
 
         print_banner()
         console.print("[bold]Quick start:[/]")
-        console.print(
-            "  agentux doctor                                      [dim]# verify setup[/]"
-        )
-        console.print(
-            "  agentux run URL --task '...' --demo                 [dim]# demo run (no API key)[/]"
-        )
-        console.print(
-            "  agentux run URL --task '...'                   [dim]# real run (needs key)[/]"
-        )
-        console.print(
-            "  agentux compare URL --vs URL2 --task '...' --demo   [dim]# compare surfaces[/]"
-        )
-        console.print(
-            "  agentux --help                                      [dim]# all commands[/]"
-        )
+        console.print("  agentux init                           [dim]# setup wizard[/]")
+        console.print("  agentux doctor                         [dim]# verify deps[/]")
+        console.print("  agentux run URL --task '...'            [dim]# run benchmark[/]")
+        console.print("  agentux --help                         [dim]# all commands[/]")
         console.print()
 
 
-# Only multi-subcommand groups use add_typer
-app.add_typer(monitor_app, name="monitor", help="Manage recurring monitors")
-app.add_typer(alerts_app, name="alerts", help="View and manage alerts")
+# ═══════════════════════════════════════════════════════════════════════════
+# SETUP — run these first
+# ═══════════════════════════════════════════════════════════════════════════
 
 
-# ── run ──────────────────────────────────────────────────────────────────────
+@app.command("init", rich_help_panel="Setup")
+def init_command(
+    directory: str = typer.Argument(".", help="Directory to initialize in"),
+) -> None:
+    """Interactive setup wizard — choose provider, model, API key."""
+    from agentux.cli.commands.init_cmd import init as _init
+
+    _init(directory=directory)
 
 
-@app.command("run")
+@app.command("doctor", rich_help_panel="Setup")
+def doctor_command() -> None:
+    """Check dependencies, credentials, and system readiness."""
+    from agentux.cli.commands.doctor import doctor as _doctor
+
+    _doctor()
+
+
+app.add_typer(
+    config_app, name="config", help="View and update configuration", rich_help_panel="Setup"
+)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# EVALUATE — run benchmarks
+# ═══════════════════════════════════════════════════════════════════════════
+
+
+@app.command("run", rich_help_panel="Evaluate")
 def run_command(
-    target: str = typer.Argument(..., help="Target URL, file path, or command to evaluate"),
+    target: str = typer.Argument(..., help="Target URL, file path, or command"),
     task: str = typer.Option(..., "--task", "-t", help="Task description for the agent"),
     surface: str = typer.Option(
-        "browser",
-        "--surface",
-        "-s",
-        help="Surface type: browser, markdown, cli, mcp",
+        "browser", "--surface", "-s", help="Surface type: browser, markdown, cli, mcp"
     ),
     backend: str = typer.Option(
-        "openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"
+        "", "--backend", "-b", help="Backend override (uses config default)"
     ),
-    model: str = typer.Option("", "--model", "-m", help="Model name override"),
+    model: str = typer.Option("", "--model", "-m", help="Model override (uses config default)"),
     base_url: str = typer.Option(
-        "", "--base-url", help="OpenAI-compatible API base URL (e.g. Groq, OpenRouter)"
+        "", "--base-url", help="API base URL override (uses config default)"
     ),
-    max_steps: int = typer.Option(25, "--max-steps", help="Maximum steps"),
+    max_steps: int = typer.Option(0, "--max-steps", help="Max steps (0 = use config default)"),
     headless: bool = typer.Option(True, "--headless/--visible", help="Browser headless mode"),
-    demo: bool = typer.Option(False, "--demo", help="Use mock backend for demo"),
+    demo: bool = typer.Option(False, "--demo", help="Use mock backend (no API key needed)"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
     tag: list[str] | None = typer.Option(None, "--tag", help="Tags for this run"),
     config_path: str | None = typer.Option(None, "--config", "-c", help="Config file path"),
@@ -95,25 +107,16 @@ def run_command(
     )
 
 
-# ── compare ──────────────────────────────────────────────────────────────────
-
-
-@app.command("compare")
+@app.command("compare", rich_help_panel="Evaluate")
 def compare_command(
     target_a: str = typer.Argument(..., help="First target (URL, path, or command)"),
     task: str = typer.Option(..., "--task", "-t", help="Task for both targets"),
-    target_b: str = typer.Option(
-        "", "--markdown", "--vs", "-B", help="Second target to compare against"
-    ),
-    surface_a: str = typer.Option(
-        "browser", "--surface-a", "-sa", help="Surface type for target A"
-    ),
-    surface_b: str = typer.Option(
-        "markdown", "--surface-b", "-sb", help="Surface type for target B"
-    ),
-    backend: str = typer.Option("openai", "--backend", "-b", help="Agent backend"),
+    target_b: str = typer.Option("", "--markdown", "--vs", "-B", help="Second target to compare"),
+    surface_a: str = typer.Option("browser", "--surface-a", "-sa", help="Surface A type"),
+    surface_b: str = typer.Option("markdown", "--surface-b", "-sb", help="Surface B type"),
+    backend: str = typer.Option("", "--backend", "-b", help="Backend override"),
     model: str = typer.Option("", "--model", "-m", help="Model override"),
-    max_steps: int = typer.Option(25, "--max-steps", help="Max steps per run"),
+    max_steps: int = typer.Option(0, "--max-steps", help="Max steps per run"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend"),
     config_path: str | None = typer.Option(None, "--config", "-c", help="Config file"),
 ) -> None:
@@ -134,40 +137,66 @@ def compare_command(
     )
 
 
-# ── replay ───────────────────────────────────────────────────────────────────
-
-
-@app.command("replay")
-def replay_command(
-    run_id: str = typer.Argument(..., help="Run ID to replay"),
-    speed: float = typer.Option(1.0, "--speed", help="Replay speed multiplier"),
-    step_mode: bool = typer.Option(False, "--step", help="Step through one at a time"),
+@app.command("cli", rich_help_panel="Evaluate")
+def cli_shortcut(
+    tool: str = typer.Argument(..., help="CLI tool name"),
+    task: str = typer.Option(..., "--task", "-t", help="Task description"),
+    backend: str = typer.Option("", "--backend", "-b", help="Backend override"),
+    demo: bool = typer.Option(False, "--demo"),
+    max_steps: int = typer.Option(0, "--max-steps"),
 ) -> None:
-    """Replay a past run step by step in the terminal."""
-    from agentux.cli.commands.replay import replay as _replay
+    """Evaluate a CLI tool's agent usability."""
+    from agentux.cli.commands.run import run_command as _run
 
-    _replay(run_id=run_id, speed=speed, step_mode=step_mode)
+    _run(
+        target=tool,
+        task=task,
+        surface="cli",
+        backend=backend,
+        model="",
+        base_url="",
+        max_steps=max_steps,
+        headless=True,
+        demo=demo,
+        verbose=False,
+        tag=None,
+        config_path=None,
+    )
 
 
-# ── trends ───────────────────────────────────────────────────────────────────
-
-
-@app.command("trends")
-def trends_command(
-    target: str | None = typer.Option(None, "--target", help="Filter by target"),
-    monitor: str | None = typer.Option(None, "--monitor", help="Filter by monitor name"),
-    limit: int = typer.Option(20, "--limit", "-n", help="Number of runs to show"),
+@app.command("mcp", rich_help_panel="Evaluate")
+def mcp_shortcut(
+    task: str = typer.Option(..., "--task", "-t", help="Task description"),
+    command: str = typer.Option("", "--command", "-c", help="MCP server command"),
+    backend: str = typer.Option("", "--backend", "-b", help="Backend override"),
+    demo: bool = typer.Option(False, "--demo"),
+    max_steps: int = typer.Option(0, "--max-steps"),
 ) -> None:
-    """View AES trends and historical data."""
-    from agentux.cli.commands.trends import trends as _trends
+    """Evaluate an MCP server's tool discoverability."""
+    from agentux.cli.commands.run import run_command as _run
 
-    _trends(target=target, monitor=monitor, limit=limit)
+    _run(
+        target=command,
+        task=task,
+        surface="mcp",
+        backend=backend,
+        model="",
+        base_url="",
+        max_steps=max_steps,
+        headless=True,
+        demo=demo,
+        verbose=False,
+        tag=None,
+        config_path=None,
+    )
 
 
-# ── inspect ──────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# ANALYZE — inspect results
+# ═══════════════════════════════════════════════════════════════════════════
 
 
-@app.command("inspect")
+@app.command("inspect", rich_help_panel="Analyze")
 def inspect_command(
     run_id: str = typer.Argument(..., help="Run ID to inspect"),
     analysis: bool = typer.Option(False, "--analysis", "-a", help="Show full analysis"),
@@ -179,13 +208,34 @@ def inspect_command(
     _inspect(run_id=run_id, analysis=analysis, json_output=json_output)
 
 
-# ── export ───────────────────────────────────────────────────────────────────
+@app.command("replay", rich_help_panel="Analyze")
+def replay_command(
+    run_id: str = typer.Argument(..., help="Run ID to replay"),
+    speed: float = typer.Option(1.0, "--speed", help="Replay speed multiplier"),
+    step_mode: bool = typer.Option(False, "--step", help="Step through manually"),
+) -> None:
+    """Replay a past run step by step in the terminal."""
+    from agentux.cli.commands.replay import replay as _replay
+
+    _replay(run_id=run_id, speed=speed, step_mode=step_mode)
 
 
-@app.command("export")
+@app.command("trends", rich_help_panel="Analyze")
+def trends_command(
+    target: str | None = typer.Option(None, "--target", help="Filter by target"),
+    monitor: str | None = typer.Option(None, "--monitor", help="Filter by monitor"),
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of runs"),
+) -> None:
+    """View AES trends and historical data."""
+    from agentux.cli.commands.trends import trends as _trends
+
+    _trends(target=target, monitor=monitor, limit=limit)
+
+
+@app.command("export", rich_help_panel="Analyze")
 def export_command(
     run_id: str = typer.Argument(..., help="Run ID to export"),
-    format: str = typer.Option("json", "--format", "-f", help="Export format: json, markdown, csv"),
+    format: str = typer.Option("json", "--format", "-f", help="json, markdown, or csv"),
     output: str | None = typer.Option(None, "--output", "-o", help="Output file path"),
 ) -> None:
     """Export a run as JSON, Markdown, or CSV."""
@@ -194,98 +244,33 @@ def export_command(
     _export(run_id=run_id, format=format, output=output)
 
 
-# ── doctor ───────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# MONITOR — continuous observability
+# ═══════════════════════════════════════════════════════════════════════════
+
+app.add_typer(
+    monitor_app,
+    name="monitor",
+    help="Add, list, run, enable/disable monitors",
+    rich_help_panel="Monitor",
+)
+app.add_typer(
+    alerts_app, name="alerts", help="View and acknowledge alerts", rich_help_panel="Monitor"
+)
 
 
-@app.command("doctor")
-def doctor_command() -> None:
-    """Run diagnostics to verify AgentUX dependencies and configuration."""
-    from agentux.cli.commands.doctor import doctor as _doctor
-
-    _doctor()
+# ═══════════════════════════════════════════════════════════════════════════
+# TUI
+# ═══════════════════════════════════════════════════════════════════════════
 
 
-# ── init ─────────────────────────────────────────────────────────────────────
-
-
-@app.command("init")
-def init_command(
-    directory: str = typer.Argument(".", help="Directory to initialize in"),
-) -> None:
-    """Initialize AgentUX configuration in the current directory."""
-    from agentux.cli.commands.init_cmd import init as _init
-
-    _init(directory=directory)
-
-
-# ── tui ──────────────────────────────────────────────────────────────────────
-
-
-@app.command("tui")
+@app.command("tui", rich_help_panel="Interface")
 def launch_tui() -> None:
-    """Launch the interactive TUI dashboard."""
+    """Launch the interactive terminal dashboard."""
     from agentux.tui.app import AgentUXApp
 
     tui = AgentUXApp()
     tui.run()
-
-
-# ── cli shortcut ─────────────────────────────────────────────────────────────
-
-
-@app.command("cli")
-def cli_shortcut(
-    tool: str = typer.Argument(..., help="CLI tool name"),
-    task: str = typer.Option(..., "--task", "-t", help="Task description"),
-    backend: str = typer.Option("openai", "--backend", "-b"),
-    demo: bool = typer.Option(False, "--demo"),
-    max_steps: int = typer.Option(25, "--max-steps"),
-) -> None:
-    """Evaluate a CLI tool (shortcut for run --surface cli)."""
-    from agentux.cli.commands.run import run_command as _run
-
-    _run(
-        target=tool,
-        task=task,
-        surface="cli",
-        backend=backend,
-        model="",
-        max_steps=max_steps,
-        headless=True,
-        demo=demo,
-        verbose=False,
-        tag=None,
-        config_path=None,
-    )
-
-
-# ── mcp shortcut ─────────────────────────────────────────────────────────────
-
-
-@app.command("mcp")
-def mcp_shortcut(
-    task: str = typer.Option(..., "--task", "-t", help="Task description"),
-    command: str = typer.Option("", "--command", "-c", help="MCP server command"),
-    backend: str = typer.Option("openai", "--backend", "-b"),
-    demo: bool = typer.Option(False, "--demo"),
-    max_steps: int = typer.Option(25, "--max-steps"),
-) -> None:
-    """Evaluate an MCP server (shortcut for run --surface mcp)."""
-    from agentux.cli.commands.run import run_command as _run
-
-    _run(
-        target=command,
-        task=task,
-        surface="mcp",
-        backend=backend,
-        model="",
-        max_steps=max_steps,
-        headless=True,
-        demo=demo,
-        verbose=False,
-        tag=None,
-        config_path=None,
-    )
 
 
 def main() -> None:

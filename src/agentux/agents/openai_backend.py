@@ -88,44 +88,34 @@ class OpenAIBackend(AgentBackend):
         client = self._get_client()
         actions_desc = available_actions or AVAILABLE_ACTIONS.get(surface_type, "")
 
+        # Build history context string for the prompt
+        history_context = ""
+        if history:
+            lines = ["Previous steps (do NOT repeat these actions):"]
+            for step in history[-6:]:
+                status = "OK" if step.get("success", True) else "FAIL"
+                lines.append(
+                    f"  Step {step.get('step', '?')}: [{status}] "
+                    f"{step.get('action_type', '')}: {step.get('action', '')}"
+                )
+                if step.get("result"):
+                    lines.append(f"    Result: {step['result'][:150]}")
+            lines.append(f"\nYou have taken {len(history)} steps so far. Be efficient.")
+            history_context = "\n".join(lines)
+
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
             surface_type=surface_type,
             task=task,
             target=target,
             available_actions=actions_desc,
-            observation=observation[:3000],
+            observation=observation[:2000],
+            history_context=history_context,
         )
 
-        messages: list[dict[str, str]] = [{"role": "system", "content": system_prompt}]
-
-        if history:
-            for step in history[-5:]:  # Last 5 steps for context
-                messages.append(
-                    {
-                        "role": "assistant",
-                        "content": json.dumps(
-                            {
-                                "thought_summary": step.get("thought_summary", ""),
-                                "action": step.get("action", ""),
-                                "action_type": step.get("action_type", ""),
-                            }
-                        ),
-                    }
-                )
-                if step.get("result"):
-                    messages.append(
-                        {
-                            "role": "user",
-                            "content": f"Result: {step['result'][:500]}",
-                        }
-                    )
-
-        messages.append(
-            {
-                "role": "user",
-                "content": "Decide the next action. Respond with valid JSON only.",
-            }
-        )
+        messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": "Decide the next action. Respond with valid JSON only."},
+        ]
 
         try:
             response = await client.chat.completions.create(
