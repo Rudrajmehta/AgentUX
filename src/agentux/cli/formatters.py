@@ -49,12 +49,16 @@ def print_run_summary(trace: RunTrace) -> None:
     info_table.add_row("Steps", str(trace.step_count))
     info_table.add_row("Duration", format_duration(trace.duration_ms))
     info_table.add_row("Tokens", format_tokens(trace.total_tokens))
-    info_table.add_row(
-        "AES", Text(f"{trace.scores.aes.value:.0f}/100", style=score_style(trace.scores.aes.value))
-    )
+
+    aes = trace.scores.aes.value
+    if trace.step_count > 0 and aes > 0:
+        info_table.add_row(
+            "AES",
+            Text(f"{aes:.0f}/100", style=score_style(aes)),
+        )
 
     if trace.failure_reason:
-        info_table.add_row("Reason", Text(trace.failure_reason[:60], style="error"))
+        info_table.add_row("Reason", Text(trace.failure_reason[:80], style="error"))
 
     panel = Panel(
         info_table, title="[bold cyan]Run Summary[/]", border_style="cyan", padding=(1, 2)
@@ -139,7 +143,11 @@ def print_runs_table(runs: list[dict[str, Any]]) -> None:
 
     for run in runs:
         aes = run.get("aes_score")
-        aes_text = Text(f"{aes:.0f}" if aes else "-", style=score_style(aes or 0))
+        # Don't show AES for failed infra runs (0 or None)
+        if aes and aes > 0:
+            aes_text = Text(f"{aes:.0f}", style=score_style(aes))
+        else:
+            aes_text = Text("-", style="dim")
         status_style = "success" if run.get("success") else "error"
         table.add_row(
             run["run_id"],

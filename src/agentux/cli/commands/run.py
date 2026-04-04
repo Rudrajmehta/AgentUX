@@ -155,8 +155,11 @@ def run_command(
 
     console.print()
     print_run_summary(trace)
-    console.print()
-    print_scorecard(trace.scores)
+
+    # Only show scorecard if the run actually executed steps
+    if trace.step_count > 0 and trace.scores.aes.value > 0:
+        console.print()
+        print_scorecard(trace.scores)
 
     # Save to database
     try:

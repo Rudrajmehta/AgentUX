@@ -42,8 +42,12 @@ class TrendsPanel(Static):
 
             data = db.get_trend_data(limit=50)
 
-            # Sparkline
-            scores = [d["aes_score"] or 0 for d in data]
+            # Sparkline — only real scores, not infra failures
+            scores = [
+                d["aes_score"] or 0
+                for d in data
+                if d.get("step_count", 0) > 0
+            ]
             sparkline = self.query_one("#aes-trend", SparklineWidget)
             sparkline.update_values(scores)
 
@@ -65,11 +69,13 @@ class TrendsPanel(Static):
             if data:
                 for d in data[-20:]:
                     aes = d.get("aes_score") or 0
+                    steps = d.get("step_count", 0)
+                    aes_display = f"{aes:.0f}" if steps > 0 and aes > 0 else "-"
                     table.add_row(
                         d["started_at"][:16],
-                        f"{aes:.0f}",
+                        aes_display,
                         "OK" if d["success"] else "FAIL",
-                        str(d["step_count"]),
+                        str(steps),
                         str(d["total_tokens"]),
                     )
             else:

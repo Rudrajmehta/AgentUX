@@ -54,7 +54,8 @@ class HomePanel(Static):
             runs = db.list_runs(limit=10)
             if runs:
                 for run in runs:
-                    aes = f"{run['aes_score']:.0f}" if run.get("aes_score") else "-"
+                    raw_aes = run.get("aes_score")
+                    aes = f"{raw_aes:.0f}" if raw_aes and raw_aes > 0 else "-"
                     status = "OK" if run.get("success") else "FAIL"
                     runs_table.add_row(
                         run["run_id"],
@@ -70,7 +71,7 @@ class HomePanel(Static):
             stats = self.query_one("#stats-summary", Static)
             total_runs = len(runs)
             if runs:
-                scores = [r["aes_score"] for r in runs if r.get("aes_score")]
+                scores = [r["aes_score"] for r in runs if r.get("aes_score") and r["aes_score"] > 0]
                 avg_aes = sum(scores) / len(scores) if scores else 0
                 success_rate = sum(1 for r in runs if r.get("success")) / max(total_runs, 1)
                 stats.update(

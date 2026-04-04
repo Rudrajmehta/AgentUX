@@ -32,8 +32,8 @@ def trends(
 
     console.print(f"\n[bold cyan]AES Trends[/] ({len(data)} runs)\n")
 
-    # Sparkline
-    scores = [d["aes_score"] or 0 for d in data]
+    # Sparkline — only include runs that actually produced a real score
+    scores = [d["aes_score"] or 0 for d in data if d.get("step_count", 0) > 0]
     if scores:
         _print_sparkline(scores)
         console.print()
@@ -48,11 +48,14 @@ def trends(
 
     for d in data:
         aes = d.get("aes_score") or 0
+        steps = d.get("step_count", 0)
+        # Show "-" for AES when run had no steps (infra failure)
+        aes_display = f"[{score_style(aes)}]{aes:.0f}[/]" if steps > 0 and aes > 0 else "[dim]-[/]"
         table.add_row(
             d["started_at"][:16],
-            f"[{score_style(aes)}]{aes:.0f}[/]",
+            aes_display,
             "[green]OK[/]" if d["success"] else "[red]FAIL[/]",
-            str(d["step_count"]),
+            str(steps),
             str(d["total_tokens"]),
         )
 
