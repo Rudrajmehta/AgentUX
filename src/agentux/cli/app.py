@@ -70,7 +70,7 @@ app.add_typer(
 @app.command("run", rich_help_panel="Evaluate")
 def run_command(
     target: str = typer.Argument(..., help="Target URL, file path, or command"),
-    task: str = typer.Option(..., "--task", "-t", help="Task description for the agent"),
+    task: str = typer.Option("", "--task", "-t", help="Task description (omit for general audit)"),
     surface: str = typer.Option(
         "browser", "--surface", "-s", help="Surface type: browser, markdown, cli, mcp"
     ),
@@ -110,7 +110,7 @@ def run_command(
 @app.command("compare", rich_help_panel="Evaluate")
 def compare_command(
     target_a: str = typer.Argument(..., help="First target (URL, path, or command)"),
-    task: str = typer.Option(..., "--task", "-t", help="Task for both targets"),
+    task: str = typer.Option("", "--task", "-t", help="Task for both (omit for general audit)"),
     target_b: str = typer.Option("", "--markdown", "--vs", "-B", help="Second target to compare"),
     surface_a: str = typer.Option("browser", "--surface-a", "-sa", help="Surface A type"),
     surface_b: str = typer.Option("markdown", "--surface-b", "-sb", help="Surface B type"),
@@ -140,7 +140,7 @@ def compare_command(
 @app.command("cli", rich_help_panel="Evaluate")
 def cli_shortcut(
     tool: str = typer.Argument(..., help="CLI tool name"),
-    task: str = typer.Option(..., "--task", "-t", help="Task description"),
+    task: str = typer.Option("", "--task", "-t", help="Task (omit for general audit)"),
     backend: str = typer.Option("", "--backend", "-b", help="Backend override"),
     demo: bool = typer.Option(False, "--demo"),
     max_steps: int = typer.Option(0, "--max-steps"),
@@ -166,7 +166,7 @@ def cli_shortcut(
 
 @app.command("mcp", rich_help_panel="Evaluate")
 def mcp_shortcut(
-    task: str = typer.Option(..., "--task", "-t", help="Task description"),
+    task: str = typer.Option("", "--task", "-t", help="Task (omit for general audit)"),
     command: str = typer.Option("", "--command", "-c", help="MCP server command"),
     backend: str = typer.Option("", "--backend", "-b", help="Backend override"),
     demo: bool = typer.Option(False, "--demo"),

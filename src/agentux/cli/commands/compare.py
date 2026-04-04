@@ -21,7 +21,9 @@ app = typer.Typer()
 @app.callback(invoke_without_command=True)
 def compare_command(
     target_a: str = typer.Argument(..., help="First target (URL, path, or command)"),
-    task: str = typer.Option(..., "--task", "-t", help="Task for both targets"),
+    task: str = typer.Option(
+        "", "--task", "-t", help="Task for both targets (omit for general audit)"
+    ),
     target_b: str = typer.Option(
         "", "--markdown", "--vs", "-B", help="Second target to compare against"
     ),
@@ -54,6 +56,14 @@ def compare_command(
         config.demo_mode = True
         backend = "mock"
     config.ensure_dirs()
+
+    if not task:
+        task = (
+            "Explore this surface as a first-time visitor. "
+            "Find what it does, how it's organized, key information, "
+            "and any setup instructions. Report what was easy and hard to find."
+        )
+        console.print("  [dim]No --task given. Running general audit.[/]\n")
 
     console.print(f"  [bold]A:[/] {target_a} ({surface_a})")
     console.print(f"  [bold]B:[/] {target_b} ({surface_b})")

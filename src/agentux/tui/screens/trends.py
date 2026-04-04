@@ -43,11 +43,7 @@ class TrendsPanel(Static):
             data = db.get_trend_data(limit=50)
 
             # Sparkline — only real scores, not infra failures
-            scores = [
-                d["aes_score"] or 0
-                for d in data
-                if d.get("step_count", 0) > 0
-            ]
+            scores = [d["aes_score"] or 0 for d in data if d.get("step_count", 0) > 0]
             sparkline = self.query_one("#aes-trend", SparklineWidget)
             sparkline.update_values(scores)
 

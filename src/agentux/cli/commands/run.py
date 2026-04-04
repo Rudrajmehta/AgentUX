@@ -53,7 +53,7 @@ class CLIRunCallback(RunCallback):
 @app.callback(invoke_without_command=True)
 def run_command(
     target: str = typer.Argument(..., help="Target URL, file path, or command to evaluate"),
-    task: str = typer.Option(..., "--task", "-t", help="Task description for the agent"),
+    task: str = typer.Option("", "--task", "-t", help="Task description (omit for general audit)"),
     surface: str = typer.Option(
         "browser",
         "--surface",
@@ -100,6 +100,37 @@ def run_command(
         config.demo_mode = True
         backend = "mock"
     config.ensure_dirs()
+
+    # Default audit tasks when --task is omitted
+    if not task:
+        audit_tasks = {
+            "browser": (
+                "Explore this website as a first-time visitor. "
+                "Find: what the product/site does, main navigation structure, "
+                "key pages (pricing, docs, contact), and any calls to action. "
+                "Report what was easy and hard to find."
+            ),
+            "markdown": (
+                "Read this document and assess its structure. "
+                "Find: what it covers, how sections are organized, "
+                "key concepts explained, and any setup/install instructions. "
+                "Report what was clear and what was missing."
+            ),
+            "cli": (
+                "Explore this CLI tool as a first-time user. "
+                "Discover: available commands, subcommands, and key flags. "
+                "Try the most common operation. "
+                "Report what was discoverable and what was confusing."
+            ),
+            "mcp": (
+                "Discover all available tools on this MCP server. "
+                "Understand what each tool does, inspect the most relevant one, "
+                "and try to use it. "
+                "Report which tools were clear and which were ambiguous."
+            ),
+        }
+        task = audit_tasks.get(surface, audit_tasks["browser"])
+        console.print("  [dim]No --task given. Running general audit.[/]\n")
 
     valid_surfaces = [s.value for s in SurfaceType]
     if surface not in valid_surfaces:

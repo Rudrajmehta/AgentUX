@@ -17,15 +17,21 @@ def _zero_scorecard(reason: str) -> ScoreCard:
     """Return a scorecard with all zeros for crashed/empty runs."""
     card = ScoreCard()
     fields = (
-        "discoverability", "actionability", "recovery",
-        "efficiency", "documentation_clarity",
+        "discoverability",
+        "actionability",
+        "recovery",
+        "efficiency",
+        "documentation_clarity",
     )
     for field in fields:
         name = field.replace("_", " ").title()
         setattr(card, field, ScoreResult(name=name, value=0.0, explanation=reason))
     card.aes = ScoreResult(
-        name="Agent Efficacy Score (AES)", value=0.0,
-        explanation=reason, inputs={}, sub_scores={},
+        name="Agent Efficacy Score (AES)",
+        value=0.0,
+        explanation=reason,
+        inputs={},
+        sub_scores={},
     )
     return card
 
@@ -42,9 +48,20 @@ class ScoringEngine:
             return _zero_scorecard(f"Run failed before evaluation: {reason[:80]}")
 
         # If the run was a hard failure (crash, not just task failure), scores are 0
-        if trace.status == RunStatus.FAILED and trace.failure_reason and any(
-            kw in trace.failure_reason.lower()
-            for kw in ("api error", "connection", "timeout", "rate limit", "key not found", "quota")
+        if (
+            trace.status == RunStatus.FAILED
+            and trace.failure_reason
+            and any(
+                kw in trace.failure_reason.lower()
+                for kw in (
+                    "api error",
+                    "connection",
+                    "timeout",
+                    "rate limit",
+                    "key not found",
+                    "quota",
+                )
+            )
         ):
             return _zero_scorecard(f"Infrastructure failure: {trace.failure_reason[:80]}")
 
