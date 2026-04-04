@@ -169,11 +169,12 @@ class Runner:
                 self.callback.on_step_complete(step, trace)
 
                 if decision.done:
+                    reason = decision.done_reason or ""
                     trace.complete(
-                        success="success" in decision.done_reason.lower()
-                        or "complete" in decision.done_reason.lower()
+                        success="success" in reason.lower()
+                        or "complete" in reason.lower()
                         or decision.uncertainty < 0.3,
-                        failure_reason=decision.done_reason if not success else None,
+                        failure_reason=reason if not success else None,
                     )
                     break
             else:

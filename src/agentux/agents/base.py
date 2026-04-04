@@ -18,7 +18,7 @@ class AgentDecision(BaseModel):
     extracted_facts: list[str] = Field(default_factory=list)
     uncertainty: float = 0.0  # 0-1
     done: bool = False
-    done_reason: str = ""
+    done_reason: str | None = ""
     tokens_used: int = 0
 
 

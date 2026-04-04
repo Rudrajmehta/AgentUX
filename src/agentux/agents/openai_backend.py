@@ -139,15 +139,30 @@ class OpenAIBackend(AgentBackend):
             tokens = response.usage.total_tokens if response.usage else 0
 
             data = json.loads(content)
+
+            # Sanitize LLM output — coerce None to defaults
+            facts = data.get("extracted_facts") or []
+            if not isinstance(facts, list):
+                facts = []
+
+            params = data.get("params") or {}
+            if not isinstance(params, dict):
+                params = {}
+
+            try:
+                uncertainty = float(data.get("uncertainty") or 0.0)
+            except (TypeError, ValueError):
+                uncertainty = 0.5
+
             return AgentDecision(
-                thought_summary=data.get("thought_summary", ""),
-                action=data.get("action", ""),
-                action_type=data.get("action_type", ""),
-                params=data.get("params", {}),
-                extracted_facts=data.get("extracted_facts", []),
-                uncertainty=float(data.get("uncertainty", 0.0)),
+                thought_summary=str(data.get("thought_summary") or ""),
+                action=str(data.get("action") or ""),
+                action_type=str(data.get("action_type") or ""),
+                params=params,
+                extracted_facts=[str(f) for f in facts],
+                uncertainty=uncertainty,
                 done=bool(data.get("done", False)),
-                done_reason=data.get("done_reason", ""),
+                done_reason=str(data.get("done_reason") or ""),
                 tokens_used=tokens,
             )
 
