@@ -44,10 +44,10 @@ Every run is **stateless** — the agent has zero prior knowledge of the target.
 curl -fsSL https://raw.githubusercontent.com/Rudrajmehta/AgentUX/main/scripts/install.sh | bash
 ```
 
-Or with pip:
+Or with pip (from GitHub):
 
 ```bash
-pip install agentux
+pip install git+https://github.com/Rudrajmehta/AgentUX.git
 playwright install chromium  # for browser surface
 ```
 

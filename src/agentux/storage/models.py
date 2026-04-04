@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import (
     Boolean,
@@ -33,7 +33,7 @@ class RunRecord(Base):
     status = Column(String(20), default="pending")
     success = Column(Boolean, default=False)
     failure_reason = Column(Text, nullable=True)
-    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    started_at = Column(DateTime, default=lambda: datetime.now(UTC))
     completed_at = Column(DateTime, nullable=True)
     step_count = Column(Integer, default=0)
     total_tokens = Column(Integer, default=0)
@@ -59,7 +59,7 @@ class MonitorRecord(Base):
     enabled = Column(Boolean, default=True)
     config_json = Column(Text, default="{}")
     baseline_run_id = Column(String(24), nullable=True)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     last_run_at = Column(DateTime, nullable=True)
 
 
@@ -76,5 +76,5 @@ class AlertRecord(Base):
     metric = Column(String(100), default="")
     current_value = Column(Float, default=0.0)
     threshold_value = Column(Float, default=0.0)
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     acknowledged = Column(Boolean, default=False)

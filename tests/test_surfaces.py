@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -11,8 +10,8 @@ from agentux.core.models import AffordanceStatus, SurfaceType
 from agentux.surfaces.base import Surface
 from agentux.surfaces.markdown import MarkdownSurface
 
-
 # ── Surface base interface ──────────────────────────────────────────────────
+
 
 class TestSurfaceBaseInterface:
     """Verify that Surface is a proper abstract base class."""
@@ -32,6 +31,7 @@ class TestSurfaceBaseInterface:
 
 
 # ── MarkdownSurface ─────────────────────────────────────────────────────────
+
 
 class TestMarkdownSurface:
     @pytest.fixture
@@ -135,6 +135,7 @@ class TestMarkdownSurface:
 
 
 # ── CLISurface basics ───────────────────────────────────────────────────────
+
 
 class TestCLISurfaceBasics:
     """Test CLISurface construction and attribute checks (no subprocess calls)."""

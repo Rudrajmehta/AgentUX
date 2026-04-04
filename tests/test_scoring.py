@@ -8,8 +8,6 @@ from agentux.core.models import (
     Affordance,
     AffordanceStatus,
     RunTrace,
-    ScoreCard,
-    ScoreResult,
     StepRecord,
     SurfaceType,
 )
@@ -31,6 +29,7 @@ def engine() -> ScoringEngine:
 
 # ── Discoverability ─────────────────────────────────────────────────────────
 
+
 class TestDiscoverability:
     def test_all_discovered(self, sample_trace: RunTrace) -> None:
         """When every relevant affordance is discovered/interacted, coverage is high."""
@@ -45,8 +44,10 @@ class TestDiscoverability:
     def test_none_discovered(self) -> None:
         """All relevant affordances missed gives low score."""
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t",
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
             steps=[StepRecord(step_number=1, action="noop", action_type="read")],
             affordances=[
                 Affordance(name="a", relevant=True, status=AffordanceStatus.MISSED),
@@ -60,11 +61,14 @@ class TestDiscoverability:
     def test_early_discovery_bonus(self) -> None:
         """Discovering affordances on step 1 gives a speed bonus."""
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t",
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
             steps=[
-                StepRecord(step_number=1, action="a", action_type="read",
-                           affordances_discovered=["nav"]),
+                StepRecord(
+                    step_number=1, action="a", action_type="read", affordances_discovered=["nav"]
+                ),
                 StepRecord(step_number=2, action="b", action_type="click"),
                 StepRecord(step_number=3, action="c", action_type="done"),
             ],
@@ -83,6 +87,7 @@ class TestDiscoverability:
 
 # ── Actionability ───────────────────────────────────────────────────────────
 
+
 class TestActionability:
     def test_all_successful(self, sample_trace: RunTrace) -> None:
         result = compute_actionability(sample_trace)
@@ -95,12 +100,19 @@ class TestActionability:
 
     def test_mixed_results(self) -> None:
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t",
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
             steps=[
                 StepRecord(step_number=1, action="a", action_type="click", success=True),
-                StepRecord(step_number=2, action="b", action_type="click",
-                           success=False, errors=["not found"]),
+                StepRecord(
+                    step_number=2,
+                    action="b",
+                    action_type="click",
+                    success=False,
+                    errors=["not found"],
+                ),
                 StepRecord(step_number=3, action="c", action_type="execute", success=True),
             ],
         )
@@ -115,6 +127,7 @@ class TestActionability:
 
 # ── Recovery ────────────────────────────────────────────────────────────────
 
+
 class TestRecovery:
     def test_no_errors(self, sample_trace: RunTrace) -> None:
         result = compute_recovery(sample_trace)
@@ -122,14 +135,19 @@ class TestRecovery:
 
     def test_dead_ends(self) -> None:
         steps = [
-            StepRecord(step_number=1, action="a", action_type="click",
-                       success=False, errors=["404"]),
-            StepRecord(step_number=2, action="b", action_type="click",
-                       success=False, errors=["timeout"]),
+            StepRecord(
+                step_number=1, action="a", action_type="click", success=False, errors=["404"]
+            ),
+            StepRecord(
+                step_number=2, action="b", action_type="click", success=False, errors=["timeout"]
+            ),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_recovery(trace)
         assert result.value < 100.0
@@ -137,13 +155,17 @@ class TestRecovery:
     def test_consecutive_failures_unrecoverable(self) -> None:
         """Three consecutive failures count as unrecoverable."""
         steps = [
-            StepRecord(step_number=i, action="a", action_type="click",
-                       success=False, errors=["fail"])
+            StepRecord(
+                step_number=i, action="a", action_type="click", success=False, errors=["fail"]
+            )
             for i in range(1, 5)
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_recovery(trace)
         assert result.value < 50.0
@@ -151,13 +173,21 @@ class TestRecovery:
     def test_helpful_error_recovery(self) -> None:
         """Error followed by a successful step gets helpful-error credit."""
         steps = [
-            StepRecord(step_number=1, action="a", action_type="click",
-                       success=False, errors=["Try --force"]),
+            StepRecord(
+                step_number=1,
+                action="a",
+                action_type="click",
+                success=False,
+                errors=["Try --force"],
+            ),
             StepRecord(step_number=2, action="b", action_type="click", success=True),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_recovery(trace)
         # helpful_errors offsets some dead-end penalty
@@ -170,6 +200,7 @@ class TestRecovery:
 
 # ── Efficiency ──────────────────────────────────────────────────────────────
 
+
 class TestEfficiency:
     def test_minimal_steps(self) -> None:
         """Very few steps should score high."""
@@ -178,8 +209,11 @@ class TestEfficiency:
             StepRecord(step_number=2, action="done", action_type="done"),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_efficiency(trace)
         assert result.value >= 90.0
@@ -193,8 +227,11 @@ class TestEfficiency:
             StepRecord(step_number=5, action="c", action_type="click"),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_efficiency(trace)
         assert result.value < 80.0
@@ -206,8 +243,11 @@ class TestEfficiency:
             StepRecord(step_number=3, action="read_page", action_type="read"),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_efficiency(trace)
         assert result.value < 100.0
@@ -219,17 +259,26 @@ class TestEfficiency:
 
 # ── Documentation Clarity ───────────────────────────────────────────────────
 
+
 class TestDocumentationClarity:
     def test_many_facts_high_score(self) -> None:
         steps = [
-            StepRecord(step_number=1, action="a", action_type="read",
-                       extracted_facts=["fact1", "fact2", "fact3"]),
-            StepRecord(step_number=2, action="b", action_type="read",
-                       extracted_facts=["fact4", "fact5"]),
+            StepRecord(
+                step_number=1,
+                action="a",
+                action_type="read",
+                extracted_facts=["fact1", "fact2", "fact3"],
+            ),
+            StepRecord(
+                step_number=2, action="b", action_type="read", extracted_facts=["fact4", "fact5"]
+            ),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_documentation_clarity(trace)
         assert result.value > 50.0
@@ -240,8 +289,11 @@ class TestDocumentationClarity:
             StepRecord(step_number=2, action="b", action_type="read"),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.BROWSER,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.BROWSER,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_documentation_clarity(trace)
         assert result.value < 80.0
@@ -252,6 +304,7 @@ class TestDocumentationClarity:
 
 
 # ── Tool Clarity (CLI/MCP only) ────────────────────────────────────────────
+
 
 class TestToolClarity:
     def test_all_correct(self, cli_trace: RunTrace) -> None:
@@ -265,14 +318,27 @@ class TestToolClarity:
 
     def test_failed_tool_calls(self) -> None:
         steps = [
-            StepRecord(step_number=1, action="bad_cmd", action_type="execute",
-                       success=False, errors=["unknown command"]),
-            StepRecord(step_number=2, action="bad_cmd2", action_type="tool_call",
-                       success=False, errors=["invalid args"]),
+            StepRecord(
+                step_number=1,
+                action="bad_cmd",
+                action_type="execute",
+                success=False,
+                errors=["unknown command"],
+            ),
+            StepRecord(
+                step_number=2,
+                action="bad_cmd2",
+                action_type="tool_call",
+                success=False,
+                errors=["invalid args"],
+            ),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.CLI,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.CLI,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_tool_clarity(trace)
         assert result.value == 0.0
@@ -281,12 +347,14 @@ class TestToolClarity:
         """Help consultation followed by success boosts score."""
         steps = [
             StepRecord(step_number=1, action="help deploy", action_type="read"),
-            StepRecord(step_number=2, action="deploy --prod", action_type="execute",
-                       success=True),
+            StepRecord(step_number=2, action="deploy --prod", action_type="execute", success=True),
         ]
         trace = RunTrace(
-            run_id="x", surface_type=SurfaceType.CLI,
-            target="t", task="t", steps=steps,
+            run_id="x",
+            surface_type=SurfaceType.CLI,
+            target="t",
+            task="t",
+            steps=steps,
         )
         result = compute_tool_clarity(trace)
         assert result.value > 50.0
@@ -294,21 +362,21 @@ class TestToolClarity:
 
 # ── ScoringEngine (composite AES) ──────────────────────────────────────────
 
+
 class TestScoringEngine:
-    def test_browser_score_has_no_tool_clarity(self, engine: ScoringEngine,
-                                                sample_trace: RunTrace) -> None:
+    def test_browser_score_has_no_tool_clarity(
+        self, engine: ScoringEngine, sample_trace: RunTrace
+    ) -> None:
         card = engine.score(sample_trace)
         assert card.tool_clarity is None
         assert card.aes.value > 0
 
-    def test_cli_score_has_tool_clarity(self, engine: ScoringEngine,
-                                        cli_trace: RunTrace) -> None:
+    def test_cli_score_has_tool_clarity(self, engine: ScoringEngine, cli_trace: RunTrace) -> None:
         card = engine.score(cli_trace)
         assert card.tool_clarity is not None
         assert card.tool_clarity.value > 0
 
-    def test_mcp_score_has_tool_clarity(self, engine: ScoringEngine,
-                                        mcp_trace: RunTrace) -> None:
+    def test_mcp_score_has_tool_clarity(self, engine: ScoringEngine, mcp_trace: RunTrace) -> None:
         card = engine.score(mcp_trace)
         assert card.tool_clarity is not None
 
@@ -316,14 +384,14 @@ class TestScoringEngine:
         card = engine.score(sample_trace)
         assert 0 <= card.aes.value <= 100
 
-    def test_aes_weights_sum_to_1_browser(self, engine: ScoringEngine,
-                                           sample_trace: RunTrace) -> None:
+    def test_aes_weights_sum_to_1_browser(
+        self, engine: ScoringEngine, sample_trace: RunTrace
+    ) -> None:
         card = engine.score(sample_trace)
         weights = card.aes.inputs.get("weights", {})
         assert abs(sum(weights.values()) - 1.0) < 1e-9
 
-    def test_aes_weights_sum_to_1_cli(self, engine: ScoringEngine,
-                                       cli_trace: RunTrace) -> None:
+    def test_aes_weights_sum_to_1_cli(self, engine: ScoringEngine, cli_trace: RunTrace) -> None:
         card = engine.score(cli_trace)
         weights = card.aes.inputs.get("weights", {})
         assert abs(sum(weights.values()) - 1.0) < 1e-9
@@ -338,8 +406,7 @@ class TestScoringEngine:
         assert 0 <= card.aes.value <= 100
         assert card.actionability.value == 0.0
 
-    def test_scorecard_as_dict(self, engine: ScoringEngine,
-                                sample_trace: RunTrace) -> None:
+    def test_scorecard_as_dict(self, engine: ScoringEngine, sample_trace: RunTrace) -> None:
         card = engine.score(sample_trace)
         d = card.as_dict()
         assert "discoverability" in d
@@ -347,8 +414,7 @@ class TestScoringEngine:
         # Browser has no tool_clarity
         assert "tool_clarity" not in d
 
-    def test_scorecard_as_dict_cli(self, engine: ScoringEngine,
-                                    cli_trace: RunTrace) -> None:
+    def test_scorecard_as_dict_cli(self, engine: ScoringEngine, cli_trace: RunTrace) -> None:
         card = engine.score(cli_trace)
         d = card.as_dict()
         assert "tool_clarity" in d

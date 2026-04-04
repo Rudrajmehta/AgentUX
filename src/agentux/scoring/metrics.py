@@ -8,11 +8,9 @@ so users can understand and verify the results.
 from __future__ import annotations
 
 from agentux.core.models import (
-    Affordance,
     AffordanceStatus,
     RunTrace,
     ScoreResult,
-    StepRecord,
 )
 
 
@@ -38,7 +36,8 @@ def compute_discoverability(trace: RunTrace) -> ScoreResult:
         )
 
     discovered = [
-        a for a in relevant
+        a
+        for a in relevant
         if a.status in (AffordanceStatus.DISCOVERED, AffordanceStatus.INTERACTED)
     ]
     coverage = len(discovered) / total_relevant
@@ -106,8 +105,7 @@ def compute_actionability(trace: RunTrace) -> ScoreResult:
         name="Actionability",
         value=min(100, max(0, score)),
         explanation=(
-            f"{successful}/{total_actions} actions succeeded. "
-            f"{first_try} correct on first try."
+            f"{successful}/{total_actions} actions succeeded. {first_try} correct on first try."
         ),
         inputs={
             "successful_actions": successful,
@@ -133,8 +131,12 @@ def compute_recovery(trace: RunTrace) -> ScoreResult:
             name="Recovery",
             value=100.0,
             explanation="No errors encountered — no recovery needed.",
-            inputs={"errors_encountered": 0, "dead_ends": 0,
-                    "unrecoverable_errors": 0, "recovered": 0},
+            inputs={
+                "errors_encountered": 0,
+                "dead_ends": 0,
+                "unrecoverable_errors": 0,
+                "recovered": 0,
+            },
         )
 
     dead_ends = 0
@@ -212,10 +214,8 @@ def compute_efficiency(trace: RunTrace) -> ScoreResult:
     # Wasted steps: failed steps that didn't lead to recovery
     wasted = 0
     for i, step in enumerate(trace.steps):
-        if not step.success:
-            # If followed by another failure or same action = wasted
-            if i + 1 < len(trace.steps) and not trace.steps[i + 1].success:
-                wasted += 1
+        if not step.success and i + 1 < len(trace.steps) and not trace.steps[i + 1].success:
+            wasted += 1
 
     penalty = (backtracks * 12) + (redundant_reads * 5) + (wasted * 5)
 
@@ -262,14 +262,9 @@ def compute_documentation_clarity(trace: RunTrace) -> ScoreResult:
     expected_facts = max(2, total_steps // 2)
 
     # Count steps with real low uncertainty data
-    steps_with_uncertainty = [
-        s for s in trace.steps if "uncertainty" in s.metadata
-    ]
+    steps_with_uncertainty = [s for s in trace.steps if "uncertainty" in s.metadata]
     if steps_with_uncertainty:
-        low_uncertainty = sum(
-            1 for s in steps_with_uncertainty
-            if s.metadata["uncertainty"] < 0.4
-        )
+        low_uncertainty = sum(1 for s in steps_with_uncertainty if s.metadata["uncertainty"] < 0.4)
         clarity_ratio = low_uncertainty / len(steps_with_uncertainty)
     else:
         # No uncertainty data — use fact density as proxy
@@ -322,9 +317,13 @@ def compute_tool_clarity(trace: RunTrace) -> ScoreResult:
     # Help usefulness: if help was consulted and the following action succeeded
     help_useful = 0
     for i, step in enumerate(trace.steps):
-        if step.action_type == "read" and "help" in step.action.lower():
-            if i + 1 < len(trace.steps) and trace.steps[i + 1].success:
-                help_useful += 1
+        if (
+            step.action_type == "read"
+            and "help" in step.action.lower()
+            and i + 1 < len(trace.steps)
+            and trace.steps[i + 1].success
+        ):
+            help_useful += 1
 
     help_factor = min(1.0, help_useful / max(1, total // 2))
 

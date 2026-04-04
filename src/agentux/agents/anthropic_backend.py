@@ -31,7 +31,7 @@ class AnthropicBackend(AgentBackend):
             except ImportError:
                 raise BackendError(
                     "anthropic package not installed. Run: pip install anthropic"
-                )
+                ) from None
 
             api_key = self.config.api_key or os.environ.get("ANTHROPIC_API_KEY", "")
             if not api_key:
@@ -66,24 +66,32 @@ class AnthropicBackend(AgentBackend):
 
         if history:
             for step in history[-5:]:
-                messages.append({
-                    "role": "assistant",
-                    "content": json.dumps({
-                        "thought_summary": step.get("thought_summary", ""),
-                        "action": step.get("action", ""),
-                        "action_type": step.get("action_type", ""),
-                    }),
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": json.dumps(
+                            {
+                                "thought_summary": step.get("thought_summary", ""),
+                                "action": step.get("action", ""),
+                                "action_type": step.get("action_type", ""),
+                            }
+                        ),
+                    }
+                )
                 if step.get("result"):
-                    messages.append({
-                        "role": "user",
-                        "content": f"Result: {step['result'][:500]}",
-                    })
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": f"Result: {step['result'][:500]}",
+                        }
+                    )
 
-        messages.append({
-            "role": "user",
-            "content": "Decide the next action. Respond with valid JSON only.",
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": "Decide the next action. Respond with valid JSON only.",
+            }
+        )
 
         try:
             response = await client.messages.create(
@@ -99,7 +107,11 @@ class AnthropicBackend(AgentBackend):
                 if hasattr(block, "text"):
                     content += block.text
 
-            tokens = (response.usage.input_tokens + response.usage.output_tokens) if response.usage else 0
+            tokens = (
+                (response.usage.input_tokens + response.usage.output_tokens)
+                if response.usage
+                else 0
+            )
 
             # Extract JSON from response (may be wrapped in markdown)
             if "```json" in content:
@@ -128,7 +140,7 @@ class AnthropicBackend(AgentBackend):
                 done_reason=f"JSON parse error: {e}",
             )
         except Exception as e:
-            raise BackendError(f"Anthropic API error: {e}")
+            raise BackendError(f"Anthropic API error: {e}") from e
 
     async def close(self) -> None:
         if self._client:

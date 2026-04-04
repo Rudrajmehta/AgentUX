@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import asyncio
+import contextlib
 import logging
 import time
 from typing import Any
@@ -155,14 +155,16 @@ class Runner:
                 trace.add_step(step)
 
                 # Update history for agent context
-                history.append({
-                    "step": step_num,
-                    "thought_summary": decision.thought_summary,
-                    "action": decision.action,
-                    "action_type": decision.action_type,
-                    "result": result[:200],
-                    "success": success,
-                })
+                history.append(
+                    {
+                        "step": step_num,
+                        "thought_summary": decision.thought_summary,
+                        "action": decision.action,
+                        "action_type": decision.action_type,
+                        "result": result[:200],
+                        "success": success,
+                    }
+                )
 
                 self.callback.on_step_complete(step, trace)
 
@@ -186,14 +188,10 @@ class Runner:
             self.callback.on_error(str(e), trace)
 
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 await surface.teardown()
-            except Exception:
-                pass
-            try:
+            with contextlib.suppress(Exception):
                 await backend.close()
-            except Exception:
-                pass
 
         # Score and analyze
         trace.scores = self.scoring.score(trace)

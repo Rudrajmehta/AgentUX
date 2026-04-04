@@ -3,17 +3,14 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
 import typer
 from rich.live import Live
-from rich.spinner import Spinner
-from rich.text import Text
 
 from agentux.cli.formatters import print_run_summary, print_scorecard
-from agentux.core.config import AgentUXConfig, load_config
-from agentux.core.models import SurfaceType, StepRecord, RunTrace
-from agentux.core.runner import Runner, RunCallback, create_backend, create_surface
+from agentux.core.config import load_config
+from agentux.core.models import RunTrace, StepRecord, SurfaceType
+from agentux.core.runner import RunCallback, Runner, create_backend, create_surface
 from agentux.storage.database import Database
 from agentux.utils.branding import print_mini_banner
 from agentux.utils.console import console
@@ -58,17 +55,21 @@ def run_command(
     target: str = typer.Argument(..., help="Target URL, file path, or command to evaluate"),
     task: str = typer.Option(..., "--task", "-t", help="Task description for the agent"),
     surface: str = typer.Option(
-        "browser", "--surface", "-s",
+        "browser",
+        "--surface",
+        "-s",
         help="Surface type: browser, markdown, cli, mcp",
     ),
-    backend: str = typer.Option("openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"),
+    backend: str = typer.Option(
+        "openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"
+    ),
     model: str = typer.Option("", "--model", "-m", help="Model name override"),
     max_steps: int = typer.Option(25, "--max-steps", help="Maximum steps"),
     headless: bool = typer.Option(True, "--headless/--visible", help="Browser headless mode"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend for demo"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose output"),
-    tag: Optional[list[str]] = typer.Option(None, "--tag", help="Tags for this run"),
-    config_path: Optional[str] = typer.Option(None, "--config", "-c", help="Config file path"),
+    tag: list[str] | None = typer.Option(None, "--tag", help="Tags for this run"),
+    config_path: str | None = typer.Option(None, "--config", "-c", help="Config file path"),
 ) -> None:
     """Run a benchmark evaluation against a target."""
     print_mini_banner()
@@ -97,6 +98,7 @@ def run_command(
     # Early credential validation — don't launch surfaces just to fail on auth
     if not demo and backend in ("openai", ""):
         import os
+
         key = config.backend.api_key or os.environ.get("OPENAI_API_KEY", "")
         if not key:
             console.print(
@@ -108,6 +110,7 @@ def run_command(
             raise SystemExit(1)
     if not demo and backend == "anthropic":
         import os
+
         key = config.backend.api_key or os.environ.get("ANTHROPIC_API_KEY", "")
         if not key:
             console.print(

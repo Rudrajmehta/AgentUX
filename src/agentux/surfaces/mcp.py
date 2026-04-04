@@ -52,19 +52,22 @@ class MCPSurface(Surface):
             self._stdout = self._process.stdout
 
             # Initialize MCP connection
-            await self._send_request("initialize", {
-                "protocolVersion": "2024-11-05",
-                "capabilities": {},
-                "clientInfo": {"name": "agentux", "version": "0.1.0"},
-            })
+            await self._send_request(
+                "initialize",
+                {
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {},
+                    "clientInfo": {"name": "agentux", "version": "0.1.0"},
+                },
+            )
 
             # Send initialized notification
             await self._send_notification("notifications/initialized", {})
 
         except FileNotFoundError:
-            raise MCPSurfaceError(f"MCP command not found: {command}")
+            raise MCPSurfaceError(f"MCP command not found: {command}") from None
         except Exception as e:
-            raise MCPSurfaceError(f"Failed to start MCP server: {e}")
+            raise MCPSurfaceError(f"Failed to start MCP server: {e}") from e
 
     async def teardown(self) -> None:
         if self._process:
@@ -106,10 +109,10 @@ class MCPSurface(Surface):
                 raise MCPSurfaceError("MCP server closed connection")
             response = json.loads(line.decode())
             return response.get("result", response)
-        except asyncio.TimeoutError:
-            raise MCPSurfaceError(f"MCP request timed out: {method}")
+        except TimeoutError:
+            raise MCPSurfaceError(f"MCP request timed out: {method}") from None
         except json.JSONDecodeError as e:
-            raise MCPSurfaceError(f"Invalid MCP response: {e}")
+            raise MCPSurfaceError(f"Invalid MCP response: {e}") from None
 
     async def _send_notification(self, method: str, params: dict[str, Any]) -> None:
         """Send a JSON-RPC notification (no response expected)."""
@@ -177,10 +180,13 @@ class MCPSurface(Surface):
             }
 
             try:
-                result = await self._send_request("tools/call", {
-                    "name": tool_name,
-                    "arguments": arguments,
-                })
+                result = await self._send_request(
+                    "tools/call",
+                    {
+                        "name": tool_name,
+                        "arguments": arguments,
+                    },
+                )
                 # Update affordance status
                 for aff in self._affordances:
                     if aff.name == tool_name:

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 
@@ -18,7 +17,7 @@ app = typer.Typer()
 def export(
     run_id: str = typer.Argument(..., help="Run ID to export"),
     format: str = typer.Option("json", "--format", "-f", help="Export format: json, markdown, csv"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
+    output: str | None = typer.Option(None, "--output", "-o", help="Output file path"),
 ) -> None:
     """Export a run as JSON, Markdown, or CSV."""
     config = load_config()

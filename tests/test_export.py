@@ -17,15 +17,27 @@ def _make_trace():
         model="gpt-4.1",
         backend="openai",
     )
-    trace.add_step(StepRecord(
-        step_number=1, thought_summary="test", action="click",
-        action_type="click", success=True, tokens_used=100,
-        extracted_facts=["found nav"],
-    ))
-    trace.add_step(StepRecord(
-        step_number=2, thought_summary="done", action="done",
-        action_type="done", success=True, tokens_used=50,
-    ))
+    trace.add_step(
+        StepRecord(
+            step_number=1,
+            thought_summary="test",
+            action="click",
+            action_type="click",
+            success=True,
+            tokens_used=100,
+            extracted_facts=["found nav"],
+        )
+    )
+    trace.add_step(
+        StepRecord(
+            step_number=2,
+            thought_summary="done",
+            action="done",
+            action_type="done",
+            success=True,
+            tokens_used=50,
+        )
+    )
     trace.complete(success=True)
     trace.scores = ScoringEngine().score(trace)
     return trace

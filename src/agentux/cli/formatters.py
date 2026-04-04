@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from rich.columns import Columns
 from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
@@ -20,7 +19,7 @@ def print_scorecard(scores: ScoreCard) -> None:
     table.add_column("Score", justify="right", width=8)
     table.add_column("Explanation", style="dim")
 
-    for key, result in scores.as_dict().items():
+    for _key, result in scores.as_dict().items():
         style = score_style(result.value)
         table.add_row(
             result.name,
@@ -50,12 +49,16 @@ def print_run_summary(trace: RunTrace) -> None:
     info_table.add_row("Steps", str(trace.step_count))
     info_table.add_row("Duration", format_duration(trace.duration_ms))
     info_table.add_row("Tokens", format_tokens(trace.total_tokens))
-    info_table.add_row("AES", Text(f"{trace.scores.aes.value:.0f}/100", style=score_style(trace.scores.aes.value)))
+    info_table.add_row(
+        "AES", Text(f"{trace.scores.aes.value:.0f}/100", style=score_style(trace.scores.aes.value))
+    )
 
     if trace.failure_reason:
         info_table.add_row("Reason", Text(trace.failure_reason[:60], style="error"))
 
-    panel = Panel(info_table, title="[bold cyan]Run Summary[/]", border_style="cyan", padding=(1, 2))
+    panel = Panel(
+        info_table, title="[bold cyan]Run Summary[/]", border_style="cyan", padding=(1, 2)
+    )
     console.print(panel)
 
 

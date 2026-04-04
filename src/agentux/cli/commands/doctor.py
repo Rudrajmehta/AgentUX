@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import shutil
 import sys
-from pathlib import Path
 
 import typer
 
@@ -72,7 +71,9 @@ def doctor() -> None:
         pw_ver = pkg_version("playwright")
         all_ok &= _check("Playwright", True, f"v{pw_ver}")
     except Exception:
-        all_ok &= _check("Playwright", False, "pip install playwright && playwright install chromium")
+        all_ok &= _check(
+            "Playwright", False, "pip install playwright && playwright install chromium"
+        )
 
     # Playwright browsers
     try:

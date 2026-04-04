@@ -39,12 +39,14 @@ class FrictionAnalyzer(Analyzer):
 
             # Detect confusion (high uncertainty or warnings)
             if step.warnings or step.metadata.get("uncertainty", 0) > 0.7:
-                confusion_points.append({
-                    "step": step.step_number,
-                    "action": step.action,
-                    "warnings": step.warnings,
-                    "uncertainty": step.metadata.get("uncertainty", 0),
-                })
+                confusion_points.append(
+                    {
+                        "step": step.step_number,
+                        "action": step.action,
+                        "warnings": step.warnings,
+                        "uncertainty": step.metadata.get("uncertainty", 0),
+                    }
+                )
 
             # Collect errors
             for err in step.errors:
@@ -67,9 +69,7 @@ class FrictionAnalyzer(Analyzer):
         if dead_ends > 0:
             insights.append(f"Hit {dead_ends} dead ends requiring strategy change")
         if confusion_points:
-            insights.append(
-                f"{len(confusion_points)} high-confusion steps detected"
-            )
+            insights.append(f"{len(confusion_points)} high-confusion steps detected")
         if not insights:
             insights.append("Smooth interaction with minimal friction")
 

@@ -129,8 +129,11 @@ class TestMockBackend:
 
     async def test_unknown_surface_falls_back_to_browser(self, backend: MockBackend) -> None:
         d = await backend.decide(
-            task="t", target="t", surface_type="unknown_surface",
-            observation="", available_actions="",
+            task="t",
+            target="t",
+            surface_type="unknown_surface",
+            observation="",
+            available_actions="",
         )
         # Should fall back to browser sequence
         assert d.action_type in ("read", "click", "done")
@@ -139,23 +142,32 @@ class TestMockBackend:
         """After all scripted steps, backend returns done."""
         for _ in range(20):
             d = await backend.decide(
-                task="t", target="t", surface_type="browser",
-                observation="", available_actions="",
+                task="t",
+                target="t",
+                surface_type="browser",
+                observation="",
+                available_actions="",
             )
         assert d.done is True
         assert "complete" in d.done_reason.lower()
 
     async def test_tokens_are_set(self, backend: MockBackend) -> None:
         d = await backend.decide(
-            task="t", target="t", surface_type="browser",
-            observation="", available_actions="",
+            task="t",
+            target="t",
+            surface_type="browser",
+            observation="",
+            available_actions="",
         )
         assert d.tokens_used > 0
 
     async def test_close_resets_index(self, backend: MockBackend) -> None:
         await backend.decide(
-            task="t", target="t", surface_type="browser",
-            observation="", available_actions="",
+            task="t",
+            target="t",
+            surface_type="browser",
+            observation="",
+            available_actions="",
         )
         assert backend._step_index == 1
         await backend.close()
@@ -163,8 +175,11 @@ class TestMockBackend:
 
     async def test_extracted_facts(self, backend: MockBackend) -> None:
         d = await backend.decide(
-            task="t", target="t", surface_type="browser",
-            observation="", available_actions="",
+            task="t",
+            target="t",
+            surface_type="browser",
+            observation="",
+            available_actions="",
         )
         assert isinstance(d.extracted_facts, list)
 

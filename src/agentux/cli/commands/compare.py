@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Optional
 
 import typer
 
@@ -23,14 +22,20 @@ app = typer.Typer()
 def compare_command(
     target_a: str = typer.Argument(..., help="First target (URL, path, or command)"),
     task: str = typer.Option(..., "--task", "-t", help="Task for both targets"),
-    target_b: str = typer.Option("", "--markdown", "--vs", "-B", help="Second target to compare against"),
-    surface_a: str = typer.Option("browser", "--surface-a", "-sa", help="Surface type for target A"),
-    surface_b: str = typer.Option("markdown", "--surface-b", "-sb", help="Surface type for target B"),
+    target_b: str = typer.Option(
+        "", "--markdown", "--vs", "-B", help="Second target to compare against"
+    ),
+    surface_a: str = typer.Option(
+        "browser", "--surface-a", "-sa", help="Surface type for target A"
+    ),
+    surface_b: str = typer.Option(
+        "markdown", "--surface-b", "-sb", help="Surface type for target B"
+    ),
     backend: str = typer.Option("openai", "--backend", "-b", help="Agent backend"),
     model: str = typer.Option("", "--model", "-m", help="Model override"),
     max_steps: int = typer.Option(25, "--max-steps", help="Max steps per run"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend"),
-    config_path: Optional[str] = typer.Option(None, "--config", "-c", help="Config file"),
+    config_path: str | None = typer.Option(None, "--config", "-c", help="Config file"),
 ) -> None:
     """Compare agent usability between two targets."""
     if not target_b:

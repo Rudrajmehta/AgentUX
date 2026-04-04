@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from textual.widgets import Static
 
-
 STATUS_STYLES = {
     "ok": ("#00ff88", "OK"),
     "pass": ("#00ff88", "PASS"),

@@ -19,11 +19,13 @@ def db():
 @pytest.fixture
 def sample_trace():
     from tests.conftest import make_sample_trace
+
     return make_sample_trace()
 
 
 def make_sample_trace():
-    from agentux.core.models import StepRecord, Affordance, AffordanceStatus, ScoreCard, ScoreResult
+    from agentux.core.models import StepRecord
+
     trace = RunTrace(
         surface_type=SurfaceType.BROWSER,
         target="https://example.com",
@@ -31,13 +33,21 @@ def make_sample_trace():
         model="gpt-4.1",
         backend="openai",
     )
-    trace.add_step(StepRecord(
-        step_number=1, thought_summary="test", action="click",
-        action_type="click", success=True, tokens_used=100, latency_ms=500,
-    ))
+    trace.add_step(
+        StepRecord(
+            step_number=1,
+            thought_summary="test",
+            action="click",
+            action_type="click",
+            success=True,
+            tokens_used=100,
+            latency_ms=500,
+        )
+    )
     trace.complete(success=True)
 
     from agentux.scoring.engine import ScoringEngine
+
     trace.scores = ScoringEngine().score(trace)
     return trace
 

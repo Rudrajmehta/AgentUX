@@ -69,12 +69,7 @@ _MOCK_OBSERVATIONS: dict[str, str] = {
         "  - API Reference\n"
         "  - FAQ"
     ),
-    "cli": (
-        "CLI Tool: mytool\n"
-        "Commands discovered: 4\n"
-        "Flags discovered: 2\n"
-        "Commands executed: 0"
-    ),
+    "cli": ("CLI Tool: mytool\nCommands discovered: 4\nFlags discovered: 2\nCommands executed: 0"),
     "mcp": (
         "MCP Server: server.py\n"
         "Tools available: 4\n"
@@ -106,12 +101,14 @@ class MockSurface(Surface):
     async def discover(self) -> list[Affordance]:
         key = self.surface_type.value
         for item in _MOCK_AFFORDANCES.get(key, []):
-            self._affordances.append(Affordance(
-                name=item["name"],
-                kind=item["kind"],
-                status=AffordanceStatus.DISCOVERED,
-                relevant=item["relevant"],
-            ))
+            self._affordances.append(
+                Affordance(
+                    name=item["name"],
+                    kind=item["kind"],
+                    status=AffordanceStatus.DISCOVERED,
+                    relevant=item["relevant"],
+                )
+            )
         return self._affordances
 
     async def act(self, action: str, params: dict[str, Any] | None = None) -> str:

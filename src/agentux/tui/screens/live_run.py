@@ -48,8 +48,9 @@ class LiveRunScreen(Screen):
     def action_go_back(self) -> None:
         self.app.pop_screen()
 
-    def update_step(self, step_num: int, max_steps: int, action: str,
-                    success: bool, tokens: int, elapsed: float) -> None:
+    def update_step(
+        self, step_num: int, max_steps: int, action: str, success: bool, tokens: int, elapsed: float
+    ) -> None:
         """Update the live display with step info."""
         self.query_one("#step-counter", Static).update(f"Step: {step_num} / {max_steps}")
         self.query_one("#step-progress", ProgressBar).update(progress=step_num)

@@ -26,8 +26,7 @@ DISCOVERABILITY = ScoreDefinition(
         "affordances to an agent encountering it for the first time."
     ),
     formula=(
-        "score = (discovered_relevant / total_relevant) * 80 "
-        "+ (first_discovery_speed_factor) * 20"
+        "score = (discovered_relevant / total_relevant) * 80 + (first_discovery_speed_factor) * 20"
     ),
     inputs=[
         "discovered_relevant: count of relevant affordances discovered",
@@ -105,8 +104,7 @@ EFFICIENCY = ScoreDefinition(
         "A perfect score means the agent completed the task in minimal steps."
     ),
     formula=(
-        "score = max(0, 100 - (excess_steps * 8) - (backtracks * 12) "
-        "- (redundant_reads * 5))"
+        "score = max(0, 100 - (excess_steps * 8) - (backtracks * 12) - (redundant_reads * 5))"
     ),
     inputs=[
         "actual_steps: steps taken to complete task",

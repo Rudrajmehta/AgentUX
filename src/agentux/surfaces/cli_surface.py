@@ -77,7 +77,7 @@ class CLISurface(Surface):
                 "exit_code": proc.returncode or 0,
                 "blocked": False,
             }
-        except asyncio.TimeoutError:
+        except TimeoutError:
             result = {
                 "command": command,
                 "stdout": "",
@@ -134,10 +134,15 @@ class CLISurface(Surface):
             stripped = line.strip()
             lower = stripped.lower()
 
-            if any(kw in lower for kw in [
-                "commands:", "subcommands:", "available commands",
-                "positional arguments:",
-            ]):
+            if any(
+                kw in lower
+                for kw in [
+                    "commands:",
+                    "subcommands:",
+                    "available commands",
+                    "positional arguments:",
+                ]
+            ):
                 in_commands = True
                 in_options = False
                 found_via_headers = True
@@ -159,11 +164,15 @@ class CLISurface(Surface):
                     desc = match.group(2).strip()
                     if cmd_name not in self._discovered_commands:
                         self._discovered_commands.add(cmd_name)
-                        self._affordances.append(Affordance(
-                            name=cmd_name, kind="command",
-                            status=AffordanceStatus.DISCOVERED,
-                            relevant=True, notes=desc[:100],
-                        ))
+                        self._affordances.append(
+                            Affordance(
+                                name=cmd_name,
+                                kind="command",
+                                status=AffordanceStatus.DISCOVERED,
+                                relevant=True,
+                                notes=desc[:100],
+                            )
+                        )
 
             if in_options:
                 match = re.match(r"\s{2,}(-[\w-]+(?:,\s*--[\w-]+)?)\s*(.*)", line)
@@ -172,11 +181,15 @@ class CLISurface(Surface):
                     desc = match.group(2).strip()
                     if flag_name not in self._discovered_flags:
                         self._discovered_flags.add(flag_name)
-                        self._affordances.append(Affordance(
-                            name=flag_name, kind="flag",
-                            status=AffordanceStatus.DISCOVERED,
-                            relevant=True, notes=desc[:100],
-                        ))
+                        self._affordances.append(
+                            Affordance(
+                                name=flag_name,
+                                kind="flag",
+                                status=AffordanceStatus.DISCOVERED,
+                                relevant=True,
+                                notes=desc[:100],
+                            )
+                        )
 
         # Strategy 2: fallback heuristic for unstructured help (e.g., git)
         if not found_via_headers or not self._discovered_commands:
@@ -193,22 +206,29 @@ class CLISurface(Surface):
                         continue
                     if cmd_name not in self._discovered_commands:
                         self._discovered_commands.add(cmd_name)
-                        self._affordances.append(Affordance(
-                            name=cmd_name, kind="command",
-                            status=AffordanceStatus.DISCOVERED,
-                            relevant=True, notes=desc[:100],
-                        ))
+                        self._affordances.append(
+                            Affordance(
+                                name=cmd_name,
+                                kind="command",
+                                status=AffordanceStatus.DISCOVERED,
+                                relevant=True,
+                                notes=desc[:100],
+                            )
+                        )
 
             # Also extract flags from usage line and body
             for match in re.finditer(r"(?:^|\s)(--?[a-zA-Z][\w-]*)", text):
                 flag = match.group(1)
                 if flag.startswith("--") and len(flag) > 3 and flag not in self._discovered_flags:
                     self._discovered_flags.add(flag)
-                    self._affordances.append(Affordance(
-                        name=flag, kind="flag",
-                        status=AffordanceStatus.DISCOVERED,
-                        relevant=True,
-                    ))
+                    self._affordances.append(
+                        Affordance(
+                            name=flag,
+                            kind="flag",
+                            status=AffordanceStatus.DISCOVERED,
+                            relevant=True,
+                        )
+                    )
 
     async def act(self, action: str, params: dict[str, Any] | None = None) -> str:
         params = params or {}
@@ -265,12 +285,8 @@ class CLISurface(Surface):
             "commands_discovered": len(self._discovered_commands),
             "flags_discovered": len(self._discovered_flags),
             "commands_executed": len(self._command_history),
-            "successful_commands": sum(
-                1 for c in self._command_history if c["exit_code"] == 0
-            ),
-            "failed_commands": sum(
-                1 for c in self._command_history if c["exit_code"] != 0
-            ),
+            "successful_commands": sum(1 for c in self._command_history if c["exit_code"] == 0),
+            "failed_commands": sum(1 for c in self._command_history if c["exit_code"] != 0),
         }
 
     async def list_affordances(self) -> list[Affordance]:

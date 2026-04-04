@@ -32,14 +32,16 @@ def replay(
     from rich.panel import Panel
     from rich.table import Table
 
-    console.print(Panel(
-        f"[bold]Replaying run {trace.run_id}[/]\n"
-        f"Target: {trace.target}\n"
-        f"Task: {trace.task}\n"
-        f"Steps: {trace.step_count}",
-        title="[cyan]Replay[/]",
-        border_style="cyan",
-    ))
+    console.print(
+        Panel(
+            f"[bold]Replaying run {trace.run_id}[/]\n"
+            f"Target: {trace.target}\n"
+            f"Task: {trace.task}\n"
+            f"Steps: {trace.step_count}",
+            title="[cyan]Replay[/]",
+            border_style="cyan",
+        )
+    )
 
     for step in trace.steps:
         status_icon = "[green]OK[/]" if step.success else "[red]FAIL[/]"
@@ -57,12 +59,14 @@ def replay(
         if step.errors:
             step_table.add_row("Errors", ", ".join(step.errors[:2]))
 
-        console.print(Panel(
-            step_table,
-            title=f"Step {step.step_number} {status_icon}",
-            border_style="blue" if step.success else "red",
-            padding=(0, 1),
-        ))
+        console.print(
+            Panel(
+                step_table,
+                title=f"Step {step.step_number} {status_icon}",
+                border_style="blue" if step.success else "red",
+                padding=(0, 1),
+            )
+        )
 
         if step_mode:
             typer.prompt("Press Enter to continue", default="", show_default=False)

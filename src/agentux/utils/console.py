@@ -3,22 +3,24 @@
 from rich.console import Console
 from rich.theme import Theme
 
-AGENTUX_THEME = Theme({
-    "info": "cyan",
-    "success": "bold green",
-    "warning": "bold yellow",
-    "error": "bold red",
-    "score.high": "bold green",
-    "score.mid": "bold yellow",
-    "score.low": "bold red",
-    "surface.browser": "bold blue",
-    "surface.markdown": "bold magenta",
-    "surface.cli": "bold yellow",
-    "surface.mcp": "bold cyan",
-    "dim": "dim white",
-    "accent": "bold cyan",
-    "header": "bold white on dark_cyan",
-})
+AGENTUX_THEME = Theme(
+    {
+        "info": "cyan",
+        "success": "bold green",
+        "warning": "bold yellow",
+        "error": "bold red",
+        "score.high": "bold green",
+        "score.mid": "bold yellow",
+        "score.low": "bold red",
+        "surface.browser": "bold blue",
+        "surface.markdown": "bold magenta",
+        "surface.cli": "bold yellow",
+        "surface.mcp": "bold cyan",
+        "dim": "dim white",
+        "accent": "bold cyan",
+        "header": "bold white on dark_cyan",
+    }
+)
 
 console = Console(theme=AGENTUX_THEME)
 

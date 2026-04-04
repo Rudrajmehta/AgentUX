@@ -39,9 +39,9 @@ class CoverageAnalyzer(Analyzer):
             "sections_interacted": len(interacted),
             "sections_missed": len(missed),
             "links_found": len(links),
-            "pages_visited": len(set(
-                s.metadata.get("url", "") for s in trace.steps if s.metadata.get("url")
-            )),
+            "pages_visited": len(
+                set(s.metadata.get("url", "") for s in trace.steps if s.metadata.get("url"))
+            ),
             "heatmap": [
                 {
                     "name": s.name,

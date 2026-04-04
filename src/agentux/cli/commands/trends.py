@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Optional
-
 import typer
 
 from agentux.core.config import load_config
@@ -15,8 +13,8 @@ app = typer.Typer()
 
 @app.callback(invoke_without_command=True)
 def trends(
-    target: Optional[str] = typer.Option(None, "--target", help="Filter by target"),
-    monitor: Optional[str] = typer.Option(None, "--monitor", help="Filter by monitor name"),
+    target: str | None = typer.Option(None, "--target", help="Filter by target"),
+    monitor: str | None = typer.Option(None, "--monitor", help="Filter by monitor name"),
     limit: int = typer.Option(20, "--limit", "-n", help="Number of runs to show"),
 ) -> None:
     """View AES trends and historical data."""
@@ -65,7 +63,9 @@ def trends(
         avg = sum(scores) / len(scores)
         high = max(scores)
         low = min(scores)
-        console.print(f"\n  [dim]Avg:[/] {avg:.0f}  [dim]High:[/] {high:.0f}  [dim]Low:[/] {low:.0f}")
+        console.print(
+            f"\n  [dim]Avg:[/] {avg:.0f}  [dim]High:[/] {high:.0f}  [dim]Low:[/] {low:.0f}"
+        )
 
         if len(scores) >= 2:
             delta = scores[-1] - scores[-2]

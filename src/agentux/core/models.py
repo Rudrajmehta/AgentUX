@@ -3,21 +3,21 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class SurfaceType(str, Enum):
+class SurfaceType(StrEnum):
     BROWSER = "browser"
     MARKDOWN = "markdown"
     CLI = "cli"
     MCP = "mcp"
 
 
-class RunStatus(str, Enum):
+class RunStatus(StrEnum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
@@ -25,7 +25,7 @@ class RunStatus(str, Enum):
     CANCELLED = "cancelled"
 
 
-class AffordanceStatus(str, Enum):
+class AffordanceStatus(StrEnum):
     DISCOVERED = "discovered"
     INTERACTED = "interacted"
     MISSED = "missed"
@@ -48,7 +48,7 @@ class StepRecord(BaseModel):
     """A single step in an agent's interaction trace."""
 
     step_number: int
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
     thought_summary: str = ""
     action: str = ""
     action_type: str = ""  # click, type, navigate, execute, tool_call, read, search
@@ -77,7 +77,9 @@ class ScoreResult(BaseModel):
 class ScoreCard(BaseModel):
     """Complete scoring breakdown for a run."""
 
-    discoverability: ScoreResult = Field(default_factory=lambda: ScoreResult(name="Discoverability"))
+    discoverability: ScoreResult = Field(
+        default_factory=lambda: ScoreResult(name="Discoverability")
+    )
     actionability: ScoreResult = Field(default_factory=lambda: ScoreResult(name="Actionability"))
     recovery: ScoreResult = Field(default_factory=lambda: ScoreResult(name="Recovery"))
     efficiency: ScoreResult = Field(default_factory=lambda: ScoreResult(name="Efficiency"))
@@ -85,9 +87,7 @@ class ScoreCard(BaseModel):
         default_factory=lambda: ScoreResult(name="Documentation Clarity")
     )
     tool_clarity: ScoreResult | None = None  # CLI and MCP only
-    aes: ScoreResult = Field(
-        default_factory=lambda: ScoreResult(name="Agent Efficacy Score (AES)")
-    )
+    aes: ScoreResult = Field(default_factory=lambda: ScoreResult(name="Agent Efficacy Score (AES)"))
 
     def as_dict(self) -> dict[str, ScoreResult]:
         result: dict[str, ScoreResult] = {
@@ -113,7 +113,7 @@ class RunTrace(BaseModel):
     model: str = ""
     backend: str = ""
     status: RunStatus = RunStatus.PENDING
-    started_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
     steps: list[StepRecord] = Field(default_factory=list)
     affordances: list[Affordance] = Field(default_factory=list)
@@ -132,7 +132,7 @@ class RunTrace(BaseModel):
 
     def complete(self, success: bool, failure_reason: str | None = None) -> None:
         self.status = RunStatus.COMPLETED if success else RunStatus.FAILED
-        self.completed_at = datetime.now(timezone.utc)
+        self.completed_at = datetime.now(UTC)
         self.success = success
         self.failure_reason = failure_reason
 
@@ -170,11 +170,13 @@ class MonitorConfig(BaseModel):
     backend: str = "openai"
     model: str = "gpt-4.1"
     enabled: bool = True
-    thresholds: dict[str, float] = Field(default_factory=lambda: {
-        "aes_drop_pct": 10.0,
-        "success_rate_min": 0.8,
-        "max_steps": 20,
-    })
+    thresholds: dict[str, float] = Field(
+        default_factory=lambda: {
+            "aes_drop_pct": 10.0,
+            "success_rate_min": 0.8,
+            "max_steps": 20,
+        }
+    )
     tags: list[str] = Field(default_factory=list)
     metadata: dict[str, Any] = Field(default_factory=dict)
 
@@ -191,5 +193,5 @@ class Alert(BaseModel):
     metric: str = ""
     current_value: float = 0.0
     threshold_value: float = 0.0
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     acknowledged: bool = False

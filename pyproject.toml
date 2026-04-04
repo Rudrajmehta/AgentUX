@@ -65,6 +65,11 @@ src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+ignore = [
+    "B008",   # Typer uses function calls in defaults by design
+    "B017",   # Broad exception catching in adversarial tests is intentional
+    "UP042",  # str+Enum kept for Python 3.12 compat (StrEnum is 3.11+)
+]
 
 [tool.mypy]
 python_version = "3.12"

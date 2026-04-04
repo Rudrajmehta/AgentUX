@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from agentux.core.models import ComparisonResult, RunTrace
 
 
@@ -30,9 +28,13 @@ def compare_traces(trace_a: RunTrace, trace_b: RunTrace) -> ComparisonResult:
     if trace_a.step_count != trace_b.step_count:
         diff = trace_b.step_count - trace_a.step_count
         if diff < 0:
-            insights.append(f"B used {abs(diff)} fewer steps ({trace_b.step_count} vs {trace_a.step_count})")
+            insights.append(
+                f"B used {abs(diff)} fewer steps ({trace_b.step_count} vs {trace_a.step_count})"
+            )
         else:
-            insights.append(f"B used {diff} more steps ({trace_b.step_count} vs {trace_a.step_count})")
+            insights.append(
+                f"B used {diff} more steps ({trace_b.step_count} vs {trace_a.step_count})"
+            )
 
     # Compare tokens
     if trace_a.total_tokens and trace_b.total_tokens:
@@ -40,7 +42,8 @@ def compare_traces(trace_a: RunTrace, trace_b: RunTrace) -> ComparisonResult:
             (trace_b.total_tokens - trace_a.total_tokens) / max(trace_a.total_tokens, 1) * 100
         )
         if abs(token_diff_pct) > 10:
-            insights.append(f"Token usage {'increased' if token_diff_pct > 0 else 'decreased'} by {abs(token_diff_pct):.0f}%")
+            direction = "increased" if token_diff_pct > 0 else "decreased"
+            insights.append(f"Token usage {direction} by {abs(token_diff_pct):.0f}%")
 
     # Compare success
     if trace_a.success != trace_b.success:

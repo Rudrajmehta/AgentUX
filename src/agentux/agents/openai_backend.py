@@ -60,7 +60,9 @@ class OpenAIBackend(AgentBackend):
             try:
                 from openai import AsyncOpenAI
             except ImportError:
-                raise BackendError("openai package not installed. Run: pip install openai")
+                raise BackendError(
+                    "openai package not installed. Run: pip install openai"
+                ) from None
 
             api_key = self.config.api_key or os.environ.get("OPENAI_API_KEY", "")
             if not api_key:
@@ -98,24 +100,32 @@ class OpenAIBackend(AgentBackend):
 
         if history:
             for step in history[-5:]:  # Last 5 steps for context
-                messages.append({
-                    "role": "assistant",
-                    "content": json.dumps({
-                        "thought_summary": step.get("thought_summary", ""),
-                        "action": step.get("action", ""),
-                        "action_type": step.get("action_type", ""),
-                    }),
-                })
+                messages.append(
+                    {
+                        "role": "assistant",
+                        "content": json.dumps(
+                            {
+                                "thought_summary": step.get("thought_summary", ""),
+                                "action": step.get("action", ""),
+                                "action_type": step.get("action_type", ""),
+                            }
+                        ),
+                    }
+                )
                 if step.get("result"):
-                    messages.append({
-                        "role": "user",
-                        "content": f"Result: {step['result'][:500]}",
-                    })
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": f"Result: {step['result'][:500]}",
+                        }
+                    )
 
-        messages.append({
-            "role": "user",
-            "content": "Decide the next action. Respond with valid JSON only.",
-        })
+        messages.append(
+            {
+                "role": "user",
+                "content": "Decide the next action. Respond with valid JSON only.",
+            }
+        )
 
         try:
             response = await client.chat.completions.create(
@@ -149,7 +159,7 @@ class OpenAIBackend(AgentBackend):
                 done_reason=f"JSON parse error: {e}",
             )
         except Exception as e:
-            raise BackendError(f"OpenAI API error: {e}")
+            raise BackendError(f"OpenAI API error: {e}") from e
 
     async def close(self) -> None:
         if self._client:

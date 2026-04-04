@@ -178,10 +178,7 @@ class MarkdownSurface(Surface):
             return f"Unknown action: {action}"
 
     async def observe(self) -> str:
-        toc = "\n".join(
-            f"{'  ' * s['level']}- {s['title']}"
-            for s in self._sections
-        )
+        toc = "\n".join(f"{'  ' * s['level']}- {s['title']}" for s in self._sections)
         return (
             f"Markdown document: {self.target}\n"
             f"Total length: {len(self._content)} chars\n"

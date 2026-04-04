@@ -1,7 +1,5 @@
 """Tests for analyzer pipeline."""
 
-import pytest
-
 from agentux.analyzers.affordance import AffordanceAnalyzer
 from agentux.analyzers.coverage import CoverageAnalyzer
 from agentux.analyzers.friction import FrictionAnalyzer
@@ -22,15 +20,31 @@ def _make_trace() -> RunTrace:
         task="test task",
     )
     trace.affordances = [
-        Affordance(name="header", kind="section", status=AffordanceStatus.INTERACTED, relevant=True),
-        Affordance(name="pricing", kind="section", status=AffordanceStatus.DISCOVERED, relevant=True),
+        Affordance(
+            name="header", kind="section", status=AffordanceStatus.INTERACTED, relevant=True
+        ),
+        Affordance(
+            name="pricing", kind="section", status=AffordanceStatus.DISCOVERED, relevant=True
+        ),
         Affordance(name="footer", kind="section", status=AffordanceStatus.MISSED, relevant=False),
         Affordance(name="docs", kind="section", status=AffordanceStatus.MISSED, relevant=True),
     ]
     trace.add_step(StepRecord(step_number=1, action="click", action_type="click", success=True))
-    trace.add_step(StepRecord(step_number=2, action="navigate", action_type="navigate", success=False, errors=["404"]))
+    trace.add_step(
+        StepRecord(
+            step_number=2, action="navigate", action_type="navigate", success=False, errors=["404"]
+        )
+    )
     trace.add_step(StepRecord(step_number=3, action="back", action_type="back", success=True))
-    trace.add_step(StepRecord(step_number=4, action="click", action_type="click", success=True, extracted_facts=["found pricing"]))
+    trace.add_step(
+        StepRecord(
+            step_number=4,
+            action="click",
+            action_type="click",
+            success=True,
+            extracted_facts=["found pricing"],
+        )
+    )
     return trace
 
 

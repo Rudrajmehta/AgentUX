@@ -30,8 +30,7 @@ class TimelineWidget(Static):
             icon = "[#00ff88]O[/]" if step.success else "[#ff4444]X[/]"
             connector = "|" if step.step_number < len(self._steps) else " "
             line = (
-                f"  {icon} Step {step.step_number}: "
-                f"[bold]{step.action_type}[/] {step.action[:30]}"
+                f"  {icon} Step {step.step_number}: [bold]{step.action_type}[/] {step.action[:30]}"
             )
             lines.append(line)
             if step.thought_summary:

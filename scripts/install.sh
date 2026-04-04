@@ -59,7 +59,7 @@ info "Using ${PYTHON} (${PY_VERSION})"
 # --- Install agentux ---
 info "Installing agentux..."
 "${PYTHON}" -m pip install --upgrade pip --quiet
-"${PYTHON}" -m pip install agentux --quiet
+"${PYTHON}" -m pip install "git+https://github.com/Rudrajmehta/AgentUX.git" --quiet
 
 if ! command -v agentux &>/dev/null; then
   warn "agentux command not found on PATH."

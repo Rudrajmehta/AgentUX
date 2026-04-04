@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -23,10 +22,10 @@ from agentux.core.models import (
 )
 from agentux.storage.database import Database
 
-
 # ---------------------------------------------------------------------------
 # Helper builders
 # ---------------------------------------------------------------------------
+
 
 def _make_step(
     number: int,
@@ -78,20 +77,27 @@ def _make_affordance(
 # Trace fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_steps() -> list[StepRecord]:
     """A realistic 5-step interaction sequence."""
     return [
-        _make_step(1, action="extract_text", action_type="read",
-                    facts=["Found homepage"], affordances_discovered=["nav", "hero"]),
-        _make_step(2, action="click Pricing", action_type="click",
-                    facts=["Pricing link visible"]),
-        _make_step(3, action="read pricing", action_type="read",
-                    facts=["Free tier", "Pro tier", "Enterprise tier"]),
-        _make_step(4, action="click Contact", action_type="click",
-                    facts=["Contact form found"]),
-        _make_step(5, action="done", action_type="done",
-                    facts=["Task complete"]),
+        _make_step(
+            1,
+            action="extract_text",
+            action_type="read",
+            facts=["Found homepage"],
+            affordances_discovered=["nav", "hero"],
+        ),
+        _make_step(2, action="click Pricing", action_type="click", facts=["Pricing link visible"]),
+        _make_step(
+            3,
+            action="read pricing",
+            action_type="read",
+            facts=["Free tier", "Pro tier", "Enterprise tier"],
+        ),
+        _make_step(4, action="click Contact", action_type="click", facts=["Contact form found"]),
+        _make_step(5, action="done", action_type="done", facts=["Task complete"]),
     ]
 
 
@@ -126,7 +132,7 @@ def sample_trace(sample_steps: list[StepRecord], sample_affordances: list[Afford
     )
     trace.total_tokens = sum(s.tokens_used for s in sample_steps)
     trace.total_latency_ms = sum(s.latency_ms for s in sample_steps)
-    trace.completed_at = datetime.now(timezone.utc)
+    trace.completed_at = datetime.now(UTC)
     return trace
 
 
@@ -144,10 +150,7 @@ def empty_trace() -> RunTrace:
 @pytest.fixture
 def failed_trace() -> RunTrace:
     """A trace where every step fails."""
-    steps = [
-        _make_step(i, success=False, errors=[f"Error at step {i}"])
-        for i in range(1, 6)
-    ]
+    steps = [_make_step(i, success=False, errors=[f"Error at step {i}"]) for i in range(1, 6)]
     trace = RunTrace(
         run_id="failed_run",
         surface_type=SurfaceType.BROWSER,
@@ -171,16 +174,17 @@ def failed_trace() -> RunTrace:
 def cli_trace() -> RunTrace:
     """A CLI surface trace with tool_call / execute steps."""
     steps = [
-        _make_step(1, action="help", action_type="read",
-                    facts=["CLI has init, add, run"], affordances_discovered=["init", "add"]),
-        _make_step(2, action="init my-project", action_type="execute",
-                    facts=["Project created"]),
-        _make_step(3, action="add --help", action_type="read",
-                    facts=["add takes package name"]),
-        _make_step(4, action="add requests", action_type="execute",
-                    facts=["Dependency added"]),
-        _make_step(5, action="done", action_type="done",
-                    facts=["Task complete"]),
+        _make_step(
+            1,
+            action="help",
+            action_type="read",
+            facts=["CLI has init, add, run"],
+            affordances_discovered=["init", "add"],
+        ),
+        _make_step(2, action="init my-project", action_type="execute", facts=["Project created"]),
+        _make_step(3, action="add --help", action_type="read", facts=["add takes package name"]),
+        _make_step(4, action="add requests", action_type="execute", facts=["Dependency added"]),
+        _make_step(5, action="done", action_type="done", facts=["Task complete"]),
     ]
     affordances = [
         _make_affordance("init", kind="command", status=AffordanceStatus.INTERACTED),
@@ -202,7 +206,7 @@ def cli_trace() -> RunTrace:
     )
     trace.total_tokens = sum(s.tokens_used for s in steps)
     trace.total_latency_ms = sum(s.latency_ms for s in steps)
-    trace.completed_at = datetime.now(timezone.utc)
+    trace.completed_at = datetime.now(UTC)
     return trace
 
 
@@ -210,14 +214,20 @@ def cli_trace() -> RunTrace:
 def mcp_trace() -> RunTrace:
     """An MCP surface trace with tool_call steps."""
     steps = [
-        _make_step(1, action="list_tools", action_type="read",
-                    facts=["5 tools available"], affordances_discovered=["search", "get"]),
-        _make_step(2, action="inspect_tool search", action_type="read",
-                    facts=["search takes query param"]),
-        _make_step(3, action="call_tool search", action_type="tool_call",
-                    facts=["Results returned"]),
-        _make_step(4, action="done", action_type="done",
-                    facts=["Task complete"]),
+        _make_step(
+            1,
+            action="list_tools",
+            action_type="read",
+            facts=["5 tools available"],
+            affordances_discovered=["search", "get"],
+        ),
+        _make_step(
+            2, action="inspect_tool search", action_type="read", facts=["search takes query param"]
+        ),
+        _make_step(
+            3, action="call_tool search", action_type="tool_call", facts=["Results returned"]
+        ),
+        _make_step(4, action="done", action_type="done", facts=["Task complete"]),
     ]
     affordances = [
         _make_affordance("search", kind="tool", status=AffordanceStatus.INTERACTED),
@@ -238,7 +248,7 @@ def mcp_trace() -> RunTrace:
     )
     trace.total_tokens = sum(s.tokens_used for s in steps)
     trace.total_latency_ms = sum(s.latency_ms for s in steps)
-    trace.completed_at = datetime.now(timezone.utc)
+    trace.completed_at = datetime.now(UTC)
     return trace
 
 
@@ -246,27 +256,41 @@ def mcp_trace() -> RunTrace:
 # ScoreCard fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def sample_scorecard() -> ScoreCard:
     return ScoreCard(
-        discoverability=ScoreResult(name="Discoverability", value=75.0, weight=0.25,
-                                     explanation="Found 3/4 relevant affordances"),
-        actionability=ScoreResult(name="Actionability", value=90.0, weight=0.25,
-                                   explanation="9/10 actions succeeded"),
-        recovery=ScoreResult(name="Recovery", value=80.0, weight=0.15,
-                              explanation="1 dead end, 1 helpful error"),
-        efficiency=ScoreResult(name="Efficiency", value=70.0, weight=0.15,
-                                explanation="7 steps taken, est optimal 4"),
-        documentation_clarity=ScoreResult(name="Documentation Clarity", value=85.0, weight=0.20,
-                                           explanation="Extracted 6 facts"),
-        aes=ScoreResult(name="Agent Efficacy Score (AES)", value=80.5, weight=1.0,
-                         explanation="Weighted composite"),
+        discoverability=ScoreResult(
+            name="Discoverability",
+            value=75.0,
+            weight=0.25,
+            explanation="Found 3/4 relevant affordances",
+        ),
+        actionability=ScoreResult(
+            name="Actionability", value=90.0, weight=0.25, explanation="9/10 actions succeeded"
+        ),
+        recovery=ScoreResult(
+            name="Recovery", value=80.0, weight=0.15, explanation="1 dead end, 1 helpful error"
+        ),
+        efficiency=ScoreResult(
+            name="Efficiency", value=70.0, weight=0.15, explanation="7 steps taken, est optimal 4"
+        ),
+        documentation_clarity=ScoreResult(
+            name="Documentation Clarity", value=85.0, weight=0.20, explanation="Extracted 6 facts"
+        ),
+        aes=ScoreResult(
+            name="Agent Efficacy Score (AES)",
+            value=80.5,
+            weight=1.0,
+            explanation="Weighted composite",
+        ),
     )
 
 
 # ---------------------------------------------------------------------------
 # Database fixture
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def tmp_db(tmp_path: Path) -> Database:
@@ -278,6 +302,7 @@ def tmp_db(tmp_path: Path) -> Database:
 # ---------------------------------------------------------------------------
 # Config fixture
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_config(tmp_path: Path) -> AgentUXConfig:
@@ -294,6 +319,7 @@ def mock_config(tmp_path: Path) -> AgentUXConfig:
 # ---------------------------------------------------------------------------
 # Monitor / Alert fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def sample_monitor_config() -> MonitorConfig:

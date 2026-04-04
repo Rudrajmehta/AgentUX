@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal
 from textual.widgets import Static
 
 from agentux.core.models import ScoreCard
@@ -61,7 +60,7 @@ class ScoreCardWidget(Static):
             yield Static("[dim]No scores available[/]")
             return
 
-        for key, result in self._scores.as_dict().items():
+        for _key, result in self._scores.as_dict().items():
             yield ScoreBox(result.name[:12], result.value)
 
     def update_scores(self, scores: ScoreCard) -> None:

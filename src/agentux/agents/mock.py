@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import random
 from typing import Any
 
 from agentux.agents.base import AgentBackend, AgentDecision
-
 
 # Scripted demo sequences for each surface type
 MOCK_SEQUENCES: dict[str, list[dict[str, Any]]] = {

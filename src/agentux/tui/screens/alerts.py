@@ -23,8 +23,7 @@ class AlertsPanel(Static):
 
         with Vertical(classes="panel"):
             yield Static(
-                "[dim]Press [bold]a[/] to acknowledge selected alert | "
-                "[bold]r[/] to refresh[/]"
+                "[dim]Press [bold]a[/] to acknowledge selected alert | [bold]r[/] to refresh[/]"
             )
             yield DataTable(id="alerts-table", cursor_type="row")
 

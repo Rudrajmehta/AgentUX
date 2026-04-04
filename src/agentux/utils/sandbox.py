@@ -48,10 +48,14 @@ BLOCKED_PATTERNS = [
     "> /dev/sda",
     "sudo rm",
     "chmod -R 777 /",
-    "curl | sh",
-    "curl | bash",
-    "wget | sh",
-    "wget | bash",
+]
+
+# Patterns that detect piped-to-shell execution (curl/wget ... | sh/bash)
+_PIPE_TO_SHELL_KEYWORDS = [
+    ("curl", "| sh"),
+    ("curl", "| bash"),
+    ("wget", "| sh"),
+    ("wget", "| bash"),
 ]
 
 
@@ -62,6 +66,12 @@ def is_command_safe(command: str, extra_blocked: list[str] | None = None) -> tup
     for pattern in all_blocked:
         if pattern.lower() in cmd_lower:
             return False, f"Blocked pattern detected: {pattern}"
+
+    # Detect pipe-to-shell patterns (curl ... | bash, wget ... | sh)
+    for source, sink in _PIPE_TO_SHELL_KEYWORDS:
+        if source in cmd_lower and sink in cmd_lower:
+            return False, f"Blocked pattern detected: {source} ... {sink}"
+
     return True, ""
 
 

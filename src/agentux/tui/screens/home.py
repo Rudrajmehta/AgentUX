@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 
 from textual.app import ComposeResult
@@ -118,9 +119,7 @@ class HomePanel(Static):
 
         except Exception as e:
             logger.error(f"Failed to load dashboard data: {e}")
-            try:
+            with contextlib.suppress(Exception):
                 self.query_one("#stats-summary", Static).update(
                     f"  [red]Error loading data: {e}[/]"
                 )
-            except Exception:
-                pass

@@ -32,11 +32,22 @@ class ScoringEngine:
 
         # Patch per-metric weights to match the actual AES weights for this surface type
         if trace.surface_type in (SurfaceType.CLI, SurfaceType.MCP):
-            w = {"discoverability": 0.20, "actionability": 0.20, "recovery": 0.15,
-                 "efficiency": 0.15, "documentation_clarity": 0.15, "tool_clarity": 0.15}
+            w = {
+                "discoverability": 0.20,
+                "actionability": 0.20,
+                "recovery": 0.15,
+                "efficiency": 0.15,
+                "documentation_clarity": 0.15,
+                "tool_clarity": 0.15,
+            }
         else:
-            w = {"discoverability": 0.25, "actionability": 0.25, "recovery": 0.15,
-                 "efficiency": 0.15, "documentation_clarity": 0.20}
+            w = {
+                "discoverability": 0.25,
+                "actionability": 0.25,
+                "recovery": 0.15,
+                "efficiency": 0.15,
+                "documentation_clarity": 0.20,
+            }
         for key, weight in w.items():
             score_result = getattr(card, key, None)
             if score_result is not None:
@@ -76,9 +87,7 @@ class ScoringEngine:
                 weighted_sum += value * weight
                 components[key] = value
 
-        explanation_parts = [
-            f"{k}: {v:.0f} (x{weights[k]:.2f})" for k, v in components.items()
-        ]
+        explanation_parts = [f"{k}: {v:.0f} (x{weights[k]:.2f})" for k, v in components.items()]
 
         return ScoreResult(
             name="Agent Efficacy Score (AES)",

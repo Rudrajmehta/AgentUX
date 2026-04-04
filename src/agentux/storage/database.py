@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import create_engine, desc
@@ -26,8 +26,12 @@ class Database:
 
     # ── Runs ──
 
-    def save_run(self, trace: RunTrace, analysis: dict[str, Any] | None = None,
-                 monitor_name: str | None = None) -> None:
+    def save_run(
+        self,
+        trace: RunTrace,
+        analysis: dict[str, Any] | None = None,
+        monitor_name: str | None = None,
+    ) -> None:
         with self._session() as session:
             record = RunRecord(
                 run_id=trace.run_id,
@@ -180,7 +184,7 @@ class Database:
         with self._session() as session:
             record = session.query(MonitorRecord).filter_by(name=name).first()
             if record:
-                record.last_run_at = datetime.now(timezone.utc)
+                record.last_run_at = datetime.now(UTC)
                 record.baseline_run_id = run_id
                 session.commit()
 
@@ -211,7 +215,9 @@ class Database:
             session.add(record)
             session.commit()
 
-    def list_alerts(self, limit: int = 50, unacknowledged_only: bool = False) -> list[dict[str, Any]]:
+    def list_alerts(
+        self, limit: int = 50, unacknowledged_only: bool = False
+    ) -> list[dict[str, Any]]:
         with self._session() as session:
             query = session.query(AlertRecord).order_by(desc(AlertRecord.created_at))
             if unacknowledged_only:

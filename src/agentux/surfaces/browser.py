@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin
 
 from agentux.core.config import BrowserConfig
 from agentux.core.exceptions import BrowserSurfaceError
@@ -51,9 +51,7 @@ class BrowserSurface(Surface):
             from playwright.async_api import async_playwright
 
             self._playwright = await async_playwright().start()
-            self._browser = await self._playwright.chromium.launch(
-                headless=self.config.headless
-            )
+            self._browser = await self._playwright.chromium.launch(headless=self.config.headless)
             self._page = await self._browser.new_page(
                 viewport={
                     "width": self.config.viewport_width,
@@ -67,9 +65,9 @@ class BrowserSurface(Surface):
         except ImportError:
             raise BrowserSurfaceError(
                 "Playwright not installed. Run: playwright install chromium"
-            )
+            ) from None
         except Exception as e:
-            raise BrowserSurfaceError(f"Failed to initialize browser: {e}")
+            raise BrowserSurfaceError(f"Failed to initialize browser: {e}") from e
 
     async def teardown(self) -> None:
         if self._browser:

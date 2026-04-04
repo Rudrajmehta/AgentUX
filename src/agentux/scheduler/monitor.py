@@ -19,18 +19,20 @@ def load_monitors_from_dir(directory: Path) -> list[MonitorConfig]:
         try:
             raw = yaml.safe_load(path.read_text())
             if isinstance(raw, dict) and "name" in raw:
-                monitors.append(MonitorConfig(
-                    name=raw["name"],
-                    surface=SurfaceType(raw["surface"]),
-                    target=raw["target"],
-                    task=raw["task"],
-                    schedule=raw.get("schedule", "0 */6 * * *"),
-                    backend=raw.get("backend", "openai"),
-                    model=raw.get("model", "gpt-4.1"),
-                    enabled=raw.get("enabled", True),
-                    thresholds=raw.get("thresholds", {}),
-                    tags=raw.get("tags", []),
-                ))
+                monitors.append(
+                    MonitorConfig(
+                        name=raw["name"],
+                        surface=SurfaceType(raw["surface"]),
+                        target=raw["target"],
+                        task=raw["task"],
+                        schedule=raw.get("schedule", "0 */6 * * *"),
+                        backend=raw.get("backend", "openai"),
+                        model=raw.get("model", "gpt-4.1"),
+                        enabled=raw.get("enabled", True),
+                        thresholds=raw.get("thresholds", {}),
+                        tags=raw.get("tags", []),
+                    )
+                )
         except Exception:
             pass
 

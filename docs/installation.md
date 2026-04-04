@@ -7,10 +7,10 @@
 
 ## Quick Install
 
-Install from PyPI:
+Install from GitHub:
 
 ```bash
-pip install agentux
+pip install git+https://github.com/Rudrajmehta/AgentUX.git
 ```
 
 Or use the install script, which checks prerequisites and installs Playwright:
@@ -71,5 +71,5 @@ pytest
 ## Upgrading
 
 ```bash
-pip install --upgrade agentux
+pip install --upgrade git+https://github.com/Rudrajmehta/AgentUX.git
 ```

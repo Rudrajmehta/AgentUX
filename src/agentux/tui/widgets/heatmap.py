@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from textual.widgets import Static
 
-
 HEAT_COLORS = {
     "interacted": "#00ff88",
     "discovered": "#0088ff",
@@ -51,9 +50,7 @@ class HeatmapWidget(Static):
 
         # Legend
         lines.append("")
-        legend = " ".join(
-            f"[{c}]{HEAT_CHARS[s]}={s}[/]" for s, c in HEAT_COLORS.items()
-        )
+        legend = " ".join(f"[{c}]{HEAT_CHARS[s]}={s}[/]" for s, c in HEAT_COLORS.items())
         lines.append(f"  {legend}")
 
         return "\n".join(lines)

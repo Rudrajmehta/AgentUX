@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
 
 from agentux.core.config import AgentUXConfig
 from agentux.core.runner import Runner, create_backend, create_surface
@@ -89,7 +88,10 @@ class MonitorScheduler:
 
             trace, analysis = asyncio.run(
                 runner.run(
-                    surface, backend, monitor.task, monitor.target,
+                    surface,
+                    backend,
+                    monitor.task,
+                    monitor.target,
                     tags=["monitor", name],
                 )
             )

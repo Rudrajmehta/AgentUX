@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional
 
 import typer
 import yaml
@@ -96,8 +95,8 @@ def monitor_run(
     """Manually trigger a monitor run."""
     import asyncio
 
-    from agentux.core.runner import Runner, create_backend, create_surface
     from agentux.cli.formatters import print_run_summary, print_scorecard
+    from agentux.core.runner import Runner, create_backend, create_surface
 
     config = load_config()
     config.ensure_dirs()
@@ -130,6 +129,7 @@ def monitor_run(
 
     # Check thresholds
     from agentux.scheduler.alerts import check_thresholds
+
     alerts = check_thresholds(trace, monitor, db)
     if alerts:
         console.print(f"\n[warning]{len(alerts)} alert(s) generated![/]")
@@ -139,6 +139,7 @@ def monitor_run(
 
         # Deliver via webhooks if configured
         from agentux.scheduler.alerts import deliver_alert
+
         alert_cfg = {
             "slack_webhook": config.alerts.slack_webhook,
             "discord_webhook": config.alerts.discord_webhook,

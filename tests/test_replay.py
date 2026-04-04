@@ -12,10 +12,16 @@ def _make_trace():
         task="find pricing",
     )
     for i in range(5):
-        trace.add_step(StepRecord(
-            step_number=i + 1, action=f"action_{i}", action_type="click",
-            success=True, tokens_used=100, extracted_facts=[f"fact_{i}"],
-        ))
+        trace.add_step(
+            StepRecord(
+                step_number=i + 1,
+                action=f"action_{i}",
+                action_type="click",
+                success=True,
+                tokens_used=100,
+                extracted_facts=[f"fact_{i}"],
+            )
+        )
     trace.complete(success=True)
     trace.scores = ScoringEngine().score(trace)
     return trace
