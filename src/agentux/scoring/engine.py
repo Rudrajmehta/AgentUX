@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from agentux.core.models import RunTrace, ScoreCard, ScoreResult, SurfaceType
+from agentux.core.models import RunStatus, RunTrace, ScoreCard, ScoreResult, SurfaceType
 from agentux.scoring.metrics import (
     compute_actionability,
     compute_discoverability,
@@ -13,11 +13,41 @@ from agentux.scoring.metrics import (
 )
 
 
+def _zero_scorecard(reason: str) -> ScoreCard:
+    """Return a scorecard with all zeros for crashed/empty runs."""
+    card = ScoreCard()
+    fields = (
+        "discoverability", "actionability", "recovery",
+        "efficiency", "documentation_clarity",
+    )
+    for field in fields:
+        name = field.replace("_", " ").title()
+        setattr(card, field, ScoreResult(name=name, value=0.0, explanation=reason))
+    card.aes = ScoreResult(
+        name="Agent Efficacy Score (AES)", value=0.0,
+        explanation=reason, inputs={}, sub_scores={},
+    )
+    return card
+
+
 class ScoringEngine:
     """Computes transparent, decomposable scores for a run trace."""
 
     def score(self, trace: RunTrace) -> ScoreCard:
         """Compute all applicable scores for a trace."""
+
+        # If the run crashed before any agent steps, all scores are 0
+        if trace.step_count == 0:
+            reason = trace.failure_reason or "No steps completed"
+            return _zero_scorecard(f"Run failed before evaluation: {reason[:80]}")
+
+        # If the run was a hard failure (crash, not just task failure), scores are 0
+        if trace.status == RunStatus.FAILED and trace.failure_reason and any(
+            kw in trace.failure_reason.lower()
+            for kw in ("api error", "connection", "timeout", "rate limit", "key not found", "quota")
+        ):
+            return _zero_scorecard(f"Infrastructure failure: {trace.failure_reason[:80]}")
+
         card = ScoreCard()
         card.discoverability = compute_discoverability(trace)
         card.actionability = compute_actionability(trace)
@@ -58,7 +88,6 @@ class ScoringEngine:
     def _compute_aes(self, surface_type: SurfaceType, card: ScoreCard) -> ScoreResult:
         """Compute composite AES from component scores."""
         if surface_type in (SurfaceType.CLI, SurfaceType.MCP):
-            # With tool clarity
             weights = {
                 "discoverability": 0.20,
                 "actionability": 0.20,
@@ -68,7 +97,6 @@ class ScoringEngine:
                 "tool_clarity": 0.15,
             }
         else:
-            # Without tool clarity
             weights = {
                 "discoverability": 0.25,
                 "actionability": 0.25,
