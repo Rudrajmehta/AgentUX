@@ -59,25 +59,34 @@ agentux doctor
 
 ## Quick Start
 
+```bash
+agentux init                    # setup wizard (choose provider, model, key)
+agentux doctor                  # verify everything works
+```
+
 ### Browser evaluation
 
 ```bash
-agentux run https://example.com --task "find pricing and enterprise contact" --demo
+# General audit (no --task needed)
+agentux run https://example.com
+
+# Specific task
+agentux run https://example.com --task "find pricing and enterprise contact"
 ```
 
 ### Markdown comparison
 
 ```bash
 agentux compare https://example.com \
-  --markdown https://example.com/llms.txt \
-  --task "understand setup instructions" \
-  --demo
+  --vs https://example.com/llms.txt \
+  --surface-a browser --surface-b markdown \
+  --task "understand setup instructions"
 ```
 
 ### CLI evaluation
 
 ```bash
-agentux cli uv --task "create a new project and add a dependency" --demo
+agentux cli git --task "find the command to create a new branch"
 ```
 
 ### MCP evaluation
@@ -148,21 +157,43 @@ Alerts fire on AES regressions, task failures, and threshold breaches. Optional 
 
 ## CLI Reference
 
+**Setup:**
+
 | Command | Description |
 |---------|-------------|
-| `agentux run` | Run a single benchmark evaluation |
-| `agentux compare` | Compare two surfaces on the same task |
-| `agentux cli` | Shortcut for CLI surface evaluation |
-| `agentux mcp` | Shortcut for MCP surface evaluation |
-| `agentux monitor add/list/run/enable/disable` | Manage monitors |
-| `agentux replay <run_id>` | Replay a past run step-by-step |
-| `agentux trends` | View AES trends |
-| `agentux alerts` | View and manage alerts |
+| `agentux init` | Interactive setup wizard (provider, model, API key) |
+| `agentux doctor` | Check dependencies and credentials |
+| `agentux config` | View current configuration |
+| `agentux config set KEY VALUE` | Update a config value |
+
+**Evaluate:**
+
+| Command | Description |
+|---------|-------------|
+| `agentux run URL` | Run a benchmark (omit `--task` for general audit) |
+| `agentux compare URL --vs URL2` | Compare two surfaces |
+| `agentux cli TOOL` | Evaluate a CLI tool |
+| `agentux mcp --command CMD` | Evaluate an MCP server |
+
+**Analyze:**
+
+| Command | Description |
+|---------|-------------|
+| `agentux runs` | List all past runs |
 | `agentux inspect <run_id>` | Detailed run inspection |
+| `agentux replay <run_id>` | Step-by-step replay |
+| `agentux trends` | AES trends over time |
 | `agentux export <run_id>` | Export as JSON/Markdown/CSV |
-| `agentux doctor` | Run diagnostics |
-| `agentux init` | Initialize config in current directory |
-| `agentux tui` | Launch interactive TUI |
+
+**Monitor:**
+
+| Command | Description |
+|---------|-------------|
+| `agentux monitor add FILE` | Add a monitor from YAML |
+| `agentux monitor list` | List monitors |
+| `agentux monitor run NAME` | Trigger a monitor manually |
+| `agentux alerts` | View and acknowledge alerts |
+| `agentux tui` | Interactive terminal dashboard |
 
 ## Architecture
 

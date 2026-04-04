@@ -137,7 +137,8 @@ class TestScoringBoundaries:
         )
         trace.complete(success=True)
         scores = ScoringEngine().score(trace)
-        assert scores.aes.value >= 80  # should be high
+        # Single-step runs are now capped — can't prove usability in 1 step
+        assert 40 <= scores.aes.value <= 70
 
     def test_100_step_run_efficiency_penalty(self):
         trace = RunTrace(surface_type=SurfaceType.BROWSER, target="x", task="x")

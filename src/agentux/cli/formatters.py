@@ -13,11 +13,13 @@ from agentux.utils.console import console, format_duration, format_tokens, score
 
 
 def print_scorecard(scores: ScoreCard) -> None:
-    """Print a beautiful scorecard panel."""
+    """Print scorecard with scores and actionable recommendations."""
     table = Table(show_header=True, header_style="bold cyan", box=None, pad_edge=False)
     table.add_column("Metric", style="bold")
     table.add_column("Score", justify="right", width=8)
-    table.add_column("Explanation", style="dim")
+    table.add_column("Detail", style="dim")
+
+    all_recommendations: list[str] = []
 
     for _key, result in scores.as_dict().items():
         style = score_style(result.value)
@@ -26,9 +28,19 @@ def print_scorecard(scores: ScoreCard) -> None:
             Text(f"{result.value:.0f}", style=style),
             result.explanation[:70],
         )
+        # Collect recommendations from each metric
+        recs = result.inputs.get("recommendations", [])
+        if isinstance(recs, list):
+            all_recommendations.extend(recs)
 
     panel = Panel(table, title="[bold cyan]Scorecard[/]", border_style="cyan", padding=(1, 2))
     console.print(panel)
+
+    # Print actionable recommendations
+    if all_recommendations:
+        console.print("\n[bold yellow]Recommendations:[/]")
+        for rec in all_recommendations[:8]:
+            console.print(f"  [yellow]-[/] {rec}")
 
 
 def print_run_summary(trace: RunTrace) -> None:
