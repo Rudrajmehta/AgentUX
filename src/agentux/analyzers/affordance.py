@@ -40,16 +40,26 @@ class AffordanceAnalyzer(Analyzer):
             if a.relevant and a.status in (AffordanceStatus.DISCOVERED, AffordanceStatus.INTERACTED)
         )
 
+        # Real coverage = INTERACTED (agent actually used), not DISCOVERED (surface listed)
+        interacted_relevant = sum(
+            1 for a in trace.affordances if a.relevant and a.status == AffordanceStatus.INTERACTED
+        )
+
         insights = []
+        if relevant_total > 0:
+            real_coverage = interacted_relevant / relevant_total * 100
+            insights.append(
+                f"Agent tested {interacted_relevant}/{relevant_total} "
+                f"relevant affordances ({real_coverage:.0f}%)"
+            )
+            if real_coverage < 30:
+                insights.append("Low interaction coverage — agent barely explored the surface")
         if missed:
             missed_names: list[str] = [str(m["name"]) for m in missed if m["relevant"]]
             if missed_names:
-                insights.append(f"Missed relevant affordances: {', '.join(missed_names[:5])}")
+                insights.append(f"Not tested: {', '.join(missed_names[:5])}")
         if ambiguous:
-            insights.append(f"{len(ambiguous)} affordances were ambiguous to the agent")
-        if relevant_total > 0:
-            coverage_pct = relevant_found / relevant_total * 100
-            insights.append(f"Relevant affordance coverage: {coverage_pct:.0f}%")
+            insights.append(f"{len(ambiguous)} affordances were ambiguous")
 
         return {
             "discovered": discovered,

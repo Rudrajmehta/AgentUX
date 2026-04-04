@@ -71,7 +71,13 @@ class FrictionAnalyzer(Analyzer):
         if confusion_points:
             insights.append(f"{len(confusion_points)} high-confusion steps detected")
         if not insights:
-            insights.append("Smooth interaction with minimal friction")
+            if total_steps < 4:
+                insights.append(
+                    f"No friction detected in {total_steps} steps — "
+                    "but shallow evaluation limits confidence"
+                )
+            else:
+                insights.append("No friction detected across steps")
 
         return {
             "retries": retries,
