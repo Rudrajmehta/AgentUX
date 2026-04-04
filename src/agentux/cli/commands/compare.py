@@ -45,7 +45,9 @@ def compare_command(
     print_mini_banner()
     console.print()
 
-    config = load_config(config_path and __import__("pathlib").Path(config_path))
+    from pathlib import Path as _Path
+
+    config = load_config(_Path(config_path) if config_path else None)
     if model:
         config.backend.model = model
     if demo:

@@ -11,7 +11,7 @@ from agentux.core.models import MonitorConfig, SurfaceType
 
 def load_monitors_from_dir(directory: Path) -> list[MonitorConfig]:
     """Load all monitor configs from a directory."""
-    monitors = []
+    monitors: list[MonitorConfig] = []
     if not directory.exists():
         return monitors
 

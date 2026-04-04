@@ -42,7 +42,7 @@ class AffordanceAnalyzer(Analyzer):
 
         insights = []
         if missed:
-            missed_names = [m["name"] for m in missed if m["relevant"]]
+            missed_names: list[str] = [str(m["name"]) for m in missed if m["relevant"]]
             if missed_names:
                 insights.append(f"Missed relevant affordances: {', '.join(missed_names[:5])}")
         if ambiguous:

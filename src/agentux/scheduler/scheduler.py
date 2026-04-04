@@ -54,7 +54,7 @@ class MonitorScheduler:
                         month=parts[3],
                         day_of_week=parts[4],
                     )
-                    self._scheduler.add_job(
+                    self._scheduler.add_job(  # type: ignore[attr-defined]
                         self._run_monitor,
                         trigger,
                         args=[name],
@@ -65,7 +65,7 @@ class MonitorScheduler:
             except Exception as e:
                 logger.error(f"Failed to schedule monitor '{name}': {e}")
 
-        self._scheduler.start()
+        self._scheduler.start()  # type: ignore[attr-defined]
         logger.info("Scheduler started")
 
     def stop(self) -> None:

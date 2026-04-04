@@ -74,10 +74,16 @@ class MCPSurface(Surface):
             try:
                 if self._stdin:
                     self._stdin.close()
-                self._process.terminate()
-                await asyncio.wait_for(self._process.wait(), timeout=5)
+                if self._process.returncode is None:
+                    self._process.terminate()
+                    await asyncio.wait_for(self._process.wait(), timeout=5)
+            except (ProcessLookupError, OSError):
+                pass  # Process already exited
             except Exception:
-                self._process.kill()
+                import contextlib
+
+                with contextlib.suppress(ProcessLookupError, OSError):
+                    self._process.kill()
 
     def _next_id(self) -> int:
         self._request_id += 1

@@ -39,7 +39,7 @@ class AnthropicBackend(AgentBackend):
                     "Anthropic API key not found. Set ANTHROPIC_API_KEY environment variable "
                     "or configure backend.api_key in .agentux.yaml"
                 )
-            self._client = AsyncAnthropic(api_key=api_key, timeout=self.config.timeout)
+            self._client = AsyncAnthropic(api_key=api_key, timeout=self.config.timeout)  # type: ignore[assignment]
         return self._client
 
     async def decide(

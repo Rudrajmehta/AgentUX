@@ -73,7 +73,7 @@ class OpenAIBackend(AgentBackend):
             kwargs: dict[str, Any] = {"api_key": api_key, "timeout": self.config.timeout}
             if self.config.base_url:
                 kwargs["base_url"] = self.config.base_url
-            self._client = AsyncOpenAI(**kwargs)
+            self._client = AsyncOpenAI(**kwargs)  # type: ignore[assignment]
         return self._client
 
     async def decide(

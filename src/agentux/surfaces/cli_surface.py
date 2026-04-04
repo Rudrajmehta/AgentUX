@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import shutil
+from pathlib import Path
 from typing import Any
 
 from agentux.core.config import CLIConfig
@@ -25,7 +26,7 @@ class CLISurface(Surface):
         self.target = target  # The CLI command/binary name
         self.config = config or CLIConfig()
         self._sandbox = Sandbox()
-        self._sandbox_path = None
+        self._sandbox_path: Path | None = None
         self._affordances: list[Affordance] = []
         self._command_history: list[dict[str, Any]] = []
         self._discovered_commands: set[str] = set()
@@ -55,7 +56,8 @@ class CLISurface(Surface):
                 "blocked": True,
             }
 
-        env = create_sandbox_env(self._sandbox_path, self.config.allow_network)
+        sandbox_path = self._sandbox_path or Path(".")
+        env = create_sandbox_env(sandbox_path, self.config.allow_network)
         try:
             proc = await asyncio.create_subprocess_shell(
                 command,
