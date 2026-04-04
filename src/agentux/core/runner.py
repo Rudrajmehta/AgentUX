@@ -113,7 +113,7 @@ class Runner:
                 errors: list[str] = []
 
                 if decision.done:
-                    result = decision.done_reason
+                    result = decision.done_reason or ""
                 else:
                     try:
                         result = await surface.act(decision.action, decision.params)
