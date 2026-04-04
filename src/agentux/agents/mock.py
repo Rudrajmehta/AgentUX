@@ -183,11 +183,15 @@ class MockBackend(AgentBackend):
                 action_type="done",
                 done=True,
                 done_reason="Mock sequence complete",
-                tokens_used=random.randint(100, 500),
+                tokens_used=250,
             )
 
         step = sequence[self._step_index]
+        step_idx = self._step_index
         self._step_index += 1
+
+        # Deterministic tokens based on step position (no randomness)
+        tokens = 300 + step_idx * 50
 
         return AgentDecision(
             thought_summary=step.get("thought_summary", ""),
@@ -195,10 +199,10 @@ class MockBackend(AgentBackend):
             action_type=step.get("action_type", "read"),
             params=step.get("params", {}),
             extracted_facts=step.get("extracted_facts", []),
-            uncertainty=random.uniform(0.0, 0.3),
+            uncertainty=0.1 + step_idx * 0.05,  # Deterministic, increasing
             done=step.get("done", False),
             done_reason=step.get("done_reason", ""),
-            tokens_used=random.randint(200, 800),
+            tokens_used=tokens,
         )
 
     async def close(self) -> None:

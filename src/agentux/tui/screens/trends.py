@@ -1,46 +1,37 @@
-"""Trends / observability view screen."""
+"""Trends / observability panel."""
 
 from __future__ import annotations
 
+import logging
+
 from textual.app import ComposeResult
-from textual.containers import Container, Vertical
-from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, Static
+from textual.containers import Vertical
+from textual.widgets import DataTable, Static
 
 from agentux.tui.widgets.sparkline import SparklineWidget
 
+logger = logging.getLogger(__name__)
 
-class TrendsScreen(Screen):
+
+class TrendsPanel(Static):
     """Historical trends and observability data."""
 
-    BINDINGS = [
-        ("r", "refresh", "Refresh"),
-        ("escape", "go_back", "Back"),
-    ]
-
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Container():
-            yield Static("[bold cyan] Trends[/]\n", id="title")
+        yield Static("[bold cyan] Trends[/]", id="title")
 
-            with Vertical(classes="panel"):
-                yield Static("[bold]AES Over Time[/]")
-                yield SparklineWidget(id="aes-trend")
-                yield Static(id="trend-stats")
+        with Vertical(classes="panel"):
+            yield Static("[bold]AES Over Time[/]")
+            yield SparklineWidget(id="aes-trend")
+            yield Static(id="trend-stats")
 
-            with Vertical(classes="panel"):
-                yield Static("[bold]Run History[/]")
-                yield DataTable(id="trend-table")
-
-        yield Footer()
+        with Vertical(classes="panel"):
+            yield Static("[bold]Run History[/]")
+            yield DataTable(id="trend-table")
 
     def on_mount(self) -> None:
-        self._load_data()
+        self.load_data()
 
-    def action_refresh(self) -> None:
-        self._load_data()
-
-    def _load_data(self) -> None:
+    def load_data(self) -> None:
         try:
             from agentux.core.config import load_config
             from agentux.storage.database import Database
@@ -64,22 +55,25 @@ class TrendsScreen(Screen):
                     f"  Avg: {avg:.0f}  High: {max(scores):.0f}  "
                     f"Low: {min(scores):.0f}  Runs: {len(scores)}"
                 )
+            else:
+                stats.update("  [dim]No trend data yet.[/]")
 
             # Table
             table = self.query_one("#trend-table", DataTable)
             table.clear(columns=True)
             table.add_columns("Time", "AES", "Status", "Steps", "Tokens")
-            for d in data[-20:]:
-                aes = d.get("aes_score") or 0
-                table.add_row(
-                    d["started_at"][:16],
-                    f"{aes:.0f}",
-                    "OK" if d["success"] else "FAIL",
-                    str(d["step_count"]),
-                    str(d["total_tokens"]),
-                )
-        except Exception:
-            pass
+            if data:
+                for d in data[-20:]:
+                    aes = d.get("aes_score") or 0
+                    table.add_row(
+                        d["started_at"][:16],
+                        f"{aes:.0f}",
+                        "OK" if d["success"] else "FAIL",
+                        str(d["step_count"]),
+                        str(d["total_tokens"]),
+                    )
+            else:
+                table.add_row("-", "-", "No runs yet", "-", "-")
 
-    def action_go_back(self) -> None:
-        self.app.pop_screen()
+        except Exception as e:
+            logger.error(f"Failed to load trend data: {e}")

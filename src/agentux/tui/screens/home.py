@@ -1,63 +1,47 @@
-"""Home / dashboard screen."""
+"""Home / dashboard panel."""
 
 from __future__ import annotations
 
-from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, Vertical
-from textual.screen import Screen
-from textual.widgets import DataTable, Footer, Header, Static
+import logging
 
-from agentux.core.config import load_config
-from agentux.storage.database import Database
+from textual.app import ComposeResult
+from textual.containers import Horizontal, Vertical
+from textual.widgets import DataTable, Static
+
 from agentux.tui.widgets.sparkline import SparklineWidget
 
+logger = logging.getLogger(__name__)
 
-class HomeScreen(Screen):
+
+class HomePanel(Static):
     """Main dashboard showing recent runs, monitors, and alerts."""
 
-    BINDINGS = [
-        ("r", "refresh", "Refresh"),
-        ("n", "new_run", "New Run"),
-        ("q", "quit", "Quit"),
-    ]
-
     def compose(self) -> ComposeResult:
-        yield Header()
-        with Container():
-            yield Static("[bold cyan] Dashboard[/]\n", id="title")
+        yield Static("[bold cyan] Dashboard[/]", id="title")
+        yield Static(id="stats-summary")
+        yield SparklineWidget(id="aes-sparkline")
 
-            with Horizontal():
-                with Vertical(classes="panel"):
-                    yield Static("[bold]Recent Runs[/]")
-                    yield DataTable(id="runs-table")
+        with Horizontal():
+            with Vertical(classes="panel"):
+                yield Static("[bold]Recent Runs[/]")
+                yield DataTable(id="runs-table")
 
-                with Vertical(classes="panel"):
-                    yield Static("[bold]Quick Stats[/]")
-                    yield Static(id="stats-summary")
-                    yield SparklineWidget(id="aes-sparkline")
+            with Vertical(classes="panel"):
+                yield Static("[bold]Monitors[/]")
+                yield DataTable(id="monitors-table")
 
-            with Horizontal():
-                with Vertical(classes="panel"):
-                    yield Static("[bold]Monitors[/]")
-                    yield DataTable(id="monitors-table")
-
-                with Vertical(classes="panel"):
-                    yield Static("[bold]Recent Alerts[/]")
-                    yield DataTable(id="alerts-table")
-
-        yield Footer()
+        with Vertical(classes="panel"):
+            yield Static("[bold]Recent Alerts[/]")
+            yield DataTable(id="alerts-table")
 
     def on_mount(self) -> None:
-        self._load_data()
+        self.load_data()
 
-    def action_refresh(self) -> None:
-        self._load_data()
-
-    def action_new_run(self) -> None:
-        self.app.push_screen("live_run")
-
-    def _load_data(self) -> None:
+    def load_data(self) -> None:
         try:
+            from agentux.core.config import load_config
+            from agentux.storage.database import Database
+
             config = load_config()
             config.ensure_dirs()
             db = Database(config.database_url)
@@ -67,29 +51,34 @@ class HomeScreen(Screen):
             runs_table.clear(columns=True)
             runs_table.add_columns("ID", "Surface", "Target", "AES", "Status")
             runs = db.list_runs(limit=10)
-            for run in runs:
-                aes = f"{run['aes_score']:.0f}" if run.get("aes_score") else "-"
-                status = "OK" if run.get("success") else "FAIL"
-                runs_table.add_row(
-                    run["run_id"],
-                    run["surface_type"],
-                    run["target"][:25],
-                    aes,
-                    status,
-                )
+            if runs:
+                for run in runs:
+                    aes = f"{run['aes_score']:.0f}" if run.get("aes_score") else "-"
+                    status = "OK" if run.get("success") else "FAIL"
+                    runs_table.add_row(
+                        run["run_id"],
+                        run["surface_type"],
+                        run["target"][:25],
+                        aes,
+                        status,
+                    )
+            else:
+                runs_table.add_row("-", "-", "No runs yet. Try: agentux run ... --demo", "-", "-")
 
             # Stats
             stats = self.query_one("#stats-summary", Static)
             total_runs = len(runs)
-            avg_aes = 0
             if runs:
                 scores = [r["aes_score"] for r in runs if r.get("aes_score")]
                 avg_aes = sum(scores) / len(scores) if scores else 0
-            success_rate = sum(1 for r in runs if r.get("success")) / max(total_runs, 1)
-            stats.update(
-                f"  Runs: {total_runs}  Avg AES: {avg_aes:.0f}  "
-                f"Success: {success_rate:.0%}"
-            )
+                success_rate = sum(1 for r in runs if r.get("success")) / max(total_runs, 1)
+                stats.update(
+                    f"  [bold]Runs:[/] {total_runs}  "
+                    f"[bold]Avg AES:[/] {avg_aes:.0f}  "
+                    f"[bold]Success:[/] {success_rate:.0%}"
+                )
+            else:
+                stats.update("  [dim]No data yet. Run a benchmark to see stats here.[/]")
 
             # Sparkline
             sparkline = self.query_one("#aes-sparkline", SparklineWidget)
@@ -100,24 +89,38 @@ class HomeScreen(Screen):
             monitors_table = self.query_one("#monitors-table", DataTable)
             monitors_table.clear(columns=True)
             monitors_table.add_columns("Name", "Surface", "Schedule", "Enabled")
-            for m in db.list_monitors():
-                monitors_table.add_row(
-                    m["name"],
-                    m["surface_type"],
-                    m["schedule"],
-                    "Yes" if m["enabled"] else "No",
-                )
+            monitors = db.list_monitors()
+            if monitors:
+                for m in monitors:
+                    monitors_table.add_row(
+                        m["name"][:20],
+                        m["surface_type"],
+                        m["schedule"],
+                        "Yes" if m["enabled"] else "No",
+                    )
+            else:
+                monitors_table.add_row("-", "-", "No monitors configured", "-")
 
             # Alerts
             alerts_table = self.query_one("#alerts-table", DataTable)
             alerts_table.clear(columns=True)
             alerts_table.add_columns("Severity", "Monitor", "Message")
-            for a in db.list_alerts(limit=5, unacknowledged_only=True):
-                alerts_table.add_row(
-                    a["severity"],
-                    a["monitor_name"],
-                    a["message"][:40],
-                )
+            alert_list = db.list_alerts(limit=5, unacknowledged_only=True)
+            if alert_list:
+                for a in alert_list:
+                    alerts_table.add_row(
+                        a["severity"],
+                        a["monitor_name"],
+                        a["message"][:40],
+                    )
+            else:
+                alerts_table.add_row("-", "-", "All clear — no active alerts")
 
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"Failed to load dashboard data: {e}")
+            try:
+                self.query_one("#stats-summary", Static).update(
+                    f"  [red]Error loading data: {e}[/]"
+                )
+            except Exception:
+                pass
