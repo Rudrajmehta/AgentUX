@@ -39,6 +39,7 @@ def init(
     print_banner()
 
     target = Path(directory).resolve()
+    target.mkdir(parents=True, exist_ok=True)
     config_path = target / ".agentux.yaml"
 
     if config_path.exists():

@@ -134,7 +134,17 @@ def monitor_run(
     if alerts:
         console.print(f"\n[warning]{len(alerts)} alert(s) generated![/]")
         for alert in alerts:
+            db.save_alert(alert)
             console.print(f"  [yellow]![/] {alert.message}")
+
+        # Deliver via webhooks if configured
+        from agentux.scheduler.alerts import deliver_alert
+        alert_cfg = {
+            "slack_webhook": config.alerts.slack_webhook,
+            "discord_webhook": config.alerts.discord_webhook,
+        }
+        for alert in alerts:
+            deliver_alert(alert, alert_cfg)
 
 
 @app.command("enable")

@@ -37,10 +37,10 @@ class ReplayPlayer:
         return step
 
     def previous(self) -> StepRecord | None:
-        if self._position <= 0:
+        if self._position <= 1:
             return None
-        self._position -= 1
-        return self.trace.steps[self._position]
+        self._position -= 2
+        return self.next()  # advances position by 1 and returns the step
 
     def goto(self, step_number: int) -> StepRecord | None:
         idx = step_number - 1

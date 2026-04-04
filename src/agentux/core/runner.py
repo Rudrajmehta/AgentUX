@@ -196,6 +196,12 @@ class Runner:
 
 def create_surface(surface_type: SurfaceType, target: str, config: AgentUXConfig) -> Surface:
     """Factory function to create the appropriate surface adapter."""
+    # In demo mode, use MockSurface to avoid needing real browsers/servers
+    if config.demo_mode:
+        from agentux.surfaces.mock import MockSurface
+
+        return MockSurface(surface_type, target)
+
     from agentux.surfaces.browser import BrowserSurface
     from agentux.surfaces.cli_surface import CLISurface
     from agentux.surfaces.markdown import MarkdownSurface

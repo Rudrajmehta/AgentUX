@@ -33,11 +33,10 @@ agentux run https://docs.example.com/pricing \
 Compare how well an agent navigates a markdown doc versus the live site:
 
 ```bash
-agentux compare \
-  --surface-a markdown \
-  --target-a ./docs/README.md \
-  --surface-b browser \
-  --target-b https://example.com/docs \
+agentux compare https://example.com/docs \
+  --vs ./docs/README.md \
+  --surface-a browser \
+  --surface-b markdown \
   --task "Find the installation instructions"
 ```
 

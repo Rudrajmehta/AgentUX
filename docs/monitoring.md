@@ -67,10 +67,10 @@ Monitors use standard 5-field cron expressions (minute, hour, day-of-month, mont
 
 ## Managing Monitors
 
-### Add monitors from a directory
+### Add a monitor from a YAML file
 
 ```bash
-agentux monitor add --dir ./monitors/
+agentux monitor add monitors/pricing-monitor.yaml
 ```
 
 ### List active monitors
@@ -100,10 +100,10 @@ Run monitors as part of your CI pipeline to catch UX regressions before merging:
 - name: Run AgentUX monitors
   run: |
     pip install agentux
-    agentux monitor run pricing-page --fail-on-alert
+    agentux monitor run pricing-page
 ```
 
-The `--fail-on-alert` flag causes a non-zero exit code if any alert is triggered, which fails the CI step.
+The command prints alerts to stdout if thresholds are breached. You can check the exit output in your CI pipeline.
 
 ## Alerting
 
@@ -112,15 +112,15 @@ The `--fail-on-alert` flag causes a non-zero exit code if any alert is triggered
 Set the `AGENTUX_SLACK_WEBHOOK` environment variable or add it to your config:
 
 ```yaml
-# ~/.agentux/config.yaml
-alerting:
+# ~/.config/agentux/config.yaml
+alerts:
   slack_webhook: https://hooks.slack.com/services/T.../B.../xxx
 ```
 
 ### Discord
 
 ```yaml
-alerting:
+alerts:
   discord_webhook: https://discord.com/api/webhooks/.../...
 ```
 
@@ -135,7 +135,7 @@ alerting:
 ### Viewing Alerts
 
 ```bash
-agentux alerts list
+agentux alerts             # list unacknowledged alerts
 agentux alerts ack <alert-id>
 ```
 

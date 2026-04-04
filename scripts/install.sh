@@ -71,8 +71,15 @@ info "agentux installed successfully."
 
 # --- Optional: Playwright ---
 echo ""
-read -r -p "Install Playwright chromium for browser evaluations? [Y/n] " INSTALL_PW
-INSTALL_PW="${INSTALL_PW:-Y}"
+# Detect if running interactively or piped
+if [ -t 0 ]; then
+  read -r -p "Install Playwright chromium for browser evaluations? [Y/n] " INSTALL_PW
+  INSTALL_PW="${INSTALL_PW:-Y}"
+else
+  # Non-interactive (piped from curl): skip Playwright by default
+  INSTALL_PW="n"
+  info "Non-interactive mode: skipping Playwright install. Run later: playwright install chromium"
+fi
 
 if [[ "${INSTALL_PW}" =~ ^[Yy]$ ]]; then
   info "Installing Playwright chromium..."
