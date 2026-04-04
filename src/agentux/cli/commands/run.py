@@ -64,6 +64,9 @@ def run_command(
         "openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"
     ),
     model: str = typer.Option("", "--model", "-m", help="Model name override"),
+    base_url: str = typer.Option(
+        "", "--base-url", help="OpenAI-compatible base URL (Groq, OpenRouter)"
+    ),
     max_steps: int = typer.Option(25, "--max-steps", help="Maximum steps"),
     headless: bool = typer.Option(True, "--headless/--visible", help="Browser headless mode"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend for demo"),
@@ -82,6 +85,8 @@ def run_command(
     config.browser.headless = headless
     if model:
         config.backend.model = model
+    if base_url:
+        config.backend.base_url = base_url
     if demo:
         config.demo_mode = True
         backend = "mock"
@@ -98,7 +103,8 @@ def run_command(
     tags = list(tag) if tag else []
 
     # Early credential validation — don't launch surfaces just to fail on auth
-    if not demo and backend in ("openai", ""):
+    # Skip check if base_url is set (user is using Groq/OpenRouter/etc.)
+    if not demo and backend in ("openai", "") and not config.backend.base_url:
         import os
 
         key = config.backend.api_key or os.environ.get("OPENAI_API_KEY", "")

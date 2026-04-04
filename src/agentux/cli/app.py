@@ -66,6 +66,9 @@ def run_command(
         "openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"
     ),
     model: str = typer.Option("", "--model", "-m", help="Model name override"),
+    base_url: str = typer.Option(
+        "", "--base-url", help="OpenAI-compatible API base URL (e.g. Groq, OpenRouter)"
+    ),
     max_steps: int = typer.Option(25, "--max-steps", help="Maximum steps"),
     headless: bool = typer.Option(True, "--headless/--visible", help="Browser headless mode"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend for demo"),
@@ -82,6 +85,7 @@ def run_command(
         surface=surface,
         backend=backend,
         model=model,
+        base_url=base_url,
         max_steps=max_steps,
         headless=headless,
         demo=demo,
