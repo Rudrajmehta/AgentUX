@@ -196,6 +196,29 @@ def mcp_shortcut(
 # ═══════════════════════════════════════════════════════════════════════════
 
 
+@app.command("runs", rich_help_panel="Analyze")
+def runs_command(
+    limit: int = typer.Option(20, "--limit", "-n", help="Number of runs to show"),
+    surface: str | None = typer.Option(None, "--surface", "-s", help="Filter by surface type"),
+    target: str | None = typer.Option(None, "--target", help="Filter by target (substring)"),
+) -> None:
+    """List all past runs."""
+    from agentux.cli.formatters import print_runs_table
+    from agentux.core.config import load_config
+    from agentux.storage.database import Database
+
+    config = load_config()
+    config.ensure_dirs()
+    db = Database(config.database_url)
+    run_list = db.list_runs(limit=limit, surface_type=surface, target=target)
+    if not run_list:
+        from agentux.utils.console import console
+
+        console.print("[dim]No runs yet. Try: agentux run URL --task '...'[/]")
+        return
+    print_runs_table(run_list)
+
+
 @app.command("inspect", rich_help_panel="Analyze")
 def inspect_command(
     run_id: str = typer.Argument(..., help="Run ID to inspect"),
