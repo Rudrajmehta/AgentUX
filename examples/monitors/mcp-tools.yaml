@@ -1,0 +1,18 @@
+# Monitor: MCP server tool discoverability
+# Checks that an agent can discover and use MCP tools effectively.
+
+name: mcp-filesystem
+surface: mcp
+target: "npx -y @modelcontextprotocol/server-filesystem /tmp"
+task: "Discover available tools, list files, and read one file"
+schedule: "0 */12 * * *"
+backend: openai
+model: gpt-4.1
+enabled: true
+thresholds:
+  aes_drop_pct: 10.0
+  success_rate_min: 0.9
+  max_steps: 15
+tags:
+  - mcp
+  - filesystem

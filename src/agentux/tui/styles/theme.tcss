@@ -1,0 +1,115 @@
+/* AgentUX Terminal UI Theme */
+
+Screen {
+    background: $surface;
+}
+
+#header {
+    dock: top;
+    height: 3;
+    background: #0d7377;
+    color: #ffffff;
+    text-align: center;
+    padding: 1 2;
+}
+
+#footer {
+    dock: bottom;
+    height: 1;
+    background: #1a1a2e;
+    color: #8888aa;
+}
+
+.panel {
+    border: solid #0d7377;
+    padding: 1 2;
+    margin: 1;
+}
+
+.score-high {
+    color: #00ff88;
+}
+
+.score-mid {
+    color: #ffaa00;
+}
+
+.score-low {
+    color: #ff4444;
+}
+
+.status-ok {
+    color: #00ff88;
+}
+
+.status-fail {
+    color: #ff4444;
+}
+
+.status-running {
+    color: #00aaff;
+}
+
+.dim {
+    color: #666688;
+}
+
+.accent {
+    color: #0d7377;
+}
+
+DataTable {
+    height: auto;
+}
+
+DataTable > .datatable--header {
+    color: #0d7377;
+    text-style: bold;
+}
+
+TabbedContent {
+    height: 100%;
+}
+
+TabPane {
+    padding: 1 2;
+}
+
+.scorecard {
+    layout: horizontal;
+    height: auto;
+    margin: 1 0;
+}
+
+.score-box {
+    width: 1fr;
+    height: 5;
+    border: solid #333355;
+    content-align: center middle;
+    margin: 0 1;
+}
+
+ProgressBar {
+    padding: 0 1;
+}
+
+ProgressBar > .bar--bar {
+    color: #0d7377;
+}
+
+ListView {
+    height: auto;
+    max-height: 20;
+}
+
+#run-log {
+    height: 1fr;
+    border: solid #333355;
+    padding: 1;
+    overflow-y: auto;
+}
+
+.insight-item {
+    padding: 0 1;
+    margin: 0 0 0 2;
+}

@@ -1,0 +1,18 @@
+# Monitor: CLI onboarding usability
+# Checks that a new user (agent) can complete basic CLI onboarding tasks.
+
+name: cli-onboarding
+surface: cli
+target: git
+task: "Run help, initialize a repository, and make a first commit"
+schedule: "0 8 * * 1"
+backend: openai
+model: gpt-4.1
+enabled: true
+thresholds:
+  aes_drop_pct: 10.0
+  success_rate_min: 0.8
+  max_steps: 25
+tags:
+  - cli
+  - onboarding
