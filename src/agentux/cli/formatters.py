@@ -116,15 +116,11 @@ def print_run_analysis(trace: RunTrace, analysis: dict[str, Any]) -> None:
             "information may not be clear enough on first read"
         )
 
-    if (
-        not trace.success
-        and trace.failure_reason
-        and "max steps" in trace.failure_reason.lower()
-    ):
-            insights.append(
-                "Hit step limit — task may be too complex, "
-                "or the surface requires too many navigation steps"
-            )
+    if not trace.success and trace.failure_reason and "max steps" in trace.failure_reason.lower():
+        insights.append(
+            "Hit step limit — task may be too complex, "
+            "or the surface requires too many navigation steps"
+        )
 
     if not insights:
         if trace.step_count < 4:
@@ -132,62 +128,109 @@ def print_run_analysis(trace: RunTrace, analysis: dict[str, Any]) -> None:
         else:
             insights.append("Run completed without notable issues")
 
-    # ── Generate recommendations (what to do) ──
+    # ── Generate recommendations (for the surface BUILDER, not the tester) ──
+
+    surface_type = trace.surface_type.value
 
     if total_aff > 3 and interacted_aff / max(total_aff, 1) < 0.3:
-        recommendations.append(
-            "Run with a more specific task to increase coverage, "
-            "e.g. --task 'use the clone and branch commands'"
-        )
+        if surface_type == "browser":
+            recommendations.append(
+                "Make key pages reachable in 1-2 clicks from the homepage. "
+                "Add a clear top-level nav with labeled links to pricing, docs, and contact."
+            )
+        elif surface_type == "cli":
+            recommendations.append(
+                "Surface key commands in the top-level --help output. "
+                "Group related commands under clear categories with 1-line descriptions."
+            )
+        elif surface_type == "mcp":
+            recommendations.append(
+                "Ensure tool names are descriptive and tool descriptions explain "
+                "when to use each tool. Avoid generic names like 'run' or 'do'."
+            )
+        elif surface_type == "markdown":
+            recommendations.append(
+                "Add a table of contents at the top. Use descriptive heading names "
+                "that match what users search for (e.g. 'Installation' not 'Setup')."
+            )
 
-    if trace.step_count < 5:
-        recommendations.append(
-            "Increase --max-steps or use a more complex task to get a deeper evaluation"
-        )
-
-    low_scores = [(k, r) for k, r in scores.as_dict().items() if k != "aes" and r.value < 40]
-    for key, _result in low_scores[:3]:
+    low_scores = [(k, r) for k, r in scores.as_dict().items() if k != "aes" and r.value < 50]
+    for key, _result in low_scores[:4]:
         if key == "discoverability":
-            recommendations.append(
-                "Improve navigation: add clearer headings, better link labels, "
-                "or reduce nesting depth so agents can find key sections faster"
-            )
+            if surface_type == "browser":
+                recommendations.append(
+                    "Reduce page depth: put critical info (pricing, getting started) "
+                    "within 2 clicks of the landing page. Avoid hiding content behind "
+                    "dropdowns, modals, or JavaScript-only navigation."
+                )
+            elif surface_type == "cli":
+                recommendations.append(
+                    "Add subcommand discovery: ensure 'tool --help' lists all commands "
+                    "with short descriptions. Add 'tool <cmd> --help' for each subcommand."
+                )
+            elif surface_type == "mcp":
+                recommendations.append(
+                    "Add clear tool descriptions in the MCP schema. "
+                    "Each tool should explain its purpose, required params, and expected output."
+                )
         elif key == "actionability":
-            recommendations.append(
-                "Fix broken interactions: check that buttons, links, and commands "
-                "work correctly and return useful feedback"
-            )
+            if surface_type == "browser":
+                recommendations.append(
+                    "Ensure interactive elements have clear labels and accessible selectors. "
+                    "Avoid relying on JavaScript-rendered buttons that aren't in initial DOM."
+                )
+            elif surface_type == "cli":
+                recommendations.append(
+                    "Return clear success/failure messages from every command. "
+                    "Use exit codes consistently (0=success, 1=error)."
+                )
+            elif surface_type == "mcp":
+                recommendations.append(
+                    "Validate tool inputs and return structured error responses. "
+                    "Include required vs optional params clearly in the schema."
+                )
         elif key == "recovery":
             recommendations.append(
-                "Improve error handling: add descriptive error messages "
-                "that suggest next steps or alternative actions"
+                "When errors occur, include actionable guidance in error messages. "
+                "Instead of 'Error: invalid input', say 'Error: expected a URL, got a path. "
+                "Try: command --url https://...'."
             )
         elif key == "efficiency":
-            recommendations.append(
-                "Reduce navigation friction: make key information accessible "
-                "in fewer clicks/steps, avoid deep page hierarchies"
-            )
+            if surface_type == "browser":
+                recommendations.append(
+                    "Reduce the number of pages/clicks needed to complete common tasks. "
+                    "Consider adding a search function or quick-links section."
+                )
+            elif surface_type == "cli":
+                recommendations.append(
+                    "Add command aliases and sensible defaults so common operations "
+                    "require fewer flags. Consider a 'quickstart' or 'init' wizard."
+                )
         elif key == "documentation_clarity":
             recommendations.append(
-                "Improve content clarity: use clear headings, "
-                "add examples, and ensure key information is near the top"
+                "Structure content with clear headings that match user intent. "
+                "Lead each section with a summary sentence. "
+                "Include code examples for every key operation."
             )
         elif key == "tool_clarity":
             recommendations.append(
-                "Improve tool descriptions: add clear parameter docs, "
-                "examples in help text, and descriptive command names"
+                "Add examples to help text showing common usage patterns. "
+                "Use descriptive parameter names (--output-file not -o). "
+                "Document required vs optional arguments clearly."
             )
 
-    if errors == 0 and scores.recovery.value <= 50:
-        recommendations.append(
-            "Run a task likely to trigger errors "
-            "(e.g. 'use a nonexistent command') to test recovery behavior"
-        )
-
     if not recommendations:
-        recommendations.append(
-            "Run with a harder or broader task to stress-test more of the surface"
-        )
+        aes = scores.aes.value
+        if aes >= 80:
+            recommendations.append(
+                "Surface is performing well for agents. "
+                "Consider adding an llms.txt or markdown mirror for even faster agent access."
+            )
+        else:
+            recommendations.append(
+                "Review the low-scoring metrics above and focus improvements "
+                "on the weakest area first."
+            )
 
     # ── Print all three sections ──
 
