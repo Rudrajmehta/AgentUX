@@ -87,6 +87,30 @@ def run_command(
     surface_type = SurfaceType(surface)
     tags = list(tag) if tag else []
 
+    # Early credential validation — don't launch surfaces just to fail on auth
+    if not demo and backend in ("openai", ""):
+        import os
+        key = config.backend.api_key or os.environ.get("OPENAI_API_KEY", "")
+        if not key:
+            console.print(
+                f"[error]No OpenAI API key found.[/]\n\n"
+                f"  Set it:   export OPENAI_API_KEY='sk-...'\n"
+                f"  Or demo:  agentux run {target} --task '{task}' [bold]--demo[/]\n"
+                f"  Or use:   --backend anthropic\n"
+            )
+            raise SystemExit(1)
+    if not demo and backend == "anthropic":
+        import os
+        key = config.backend.api_key or os.environ.get("ANTHROPIC_API_KEY", "")
+        if not key:
+            console.print(
+                f"[error]No Anthropic API key found.[/]\n\n"
+                f"  Set it:   export ANTHROPIC_API_KEY='sk-ant-...'\n"
+                f"  Or demo:  agentux run {target} --task '{task}' [bold]--demo[/]\n"
+                f"  Or use:   --backend openai\n"
+            )
+            raise SystemExit(1)
+
     console.print(f"  [bold]Target:[/]  {target}")
     console.print(f"  [bold]Task:[/]    {task}")
     console.print(f"  [bold]Surface:[/] {surface_type.value}")

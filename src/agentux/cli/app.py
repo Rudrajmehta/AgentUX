@@ -12,10 +12,28 @@ from agentux.cli.commands.monitor import app as monitor_app
 app = typer.Typer(
     name="agentux",
     help="AgentUX — Synthetic observability for agent usability.",
-    no_args_is_help=True,
+    no_args_is_help=False,
     rich_markup_mode="rich",
     add_completion=False,
+    invoke_without_command=True,
 )
+
+
+@app.callback(invoke_without_command=True)
+def _root_callback(ctx: typer.Context) -> None:
+    """Show banner + quickstart when invoked with no args."""
+    if ctx.invoked_subcommand is None:
+        from agentux.utils.branding import print_banner
+        from agentux.utils.console import console
+
+        print_banner()
+        console.print("[bold]Quick start:[/]")
+        console.print("  agentux doctor                                      [dim]# verify setup[/]")
+        console.print("  agentux run URL --task '...' --demo                 [dim]# demo run (no API key)[/]")
+        console.print("  agentux run URL --task '...'                        [dim]# real run (needs API key)[/]")
+        console.print("  agentux compare URL --vs URL2 --task '...' --demo   [dim]# compare surfaces[/]")
+        console.print("  agentux --help                                      [dim]# all commands[/]")
+        console.print()
 
 # Only multi-subcommand groups use add_typer
 app.add_typer(monitor_app, name="monitor", help="Manage recurring monitors")

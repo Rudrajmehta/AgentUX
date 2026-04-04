@@ -24,6 +24,14 @@ def _check(label: str, ok: bool, detail: str = "") -> bool:
     return ok
 
 
+def _info(label: str, detail: str = "") -> None:
+    """Print an optional/informational check (not a pass/fail)."""
+    line = f"  [yellow]--[/]  {label}"
+    if detail:
+        line += f"  [dim]({detail})[/]"
+    console.print(line)
+
+
 @app.callback(invoke_without_command=True)
 def doctor() -> None:
     """Run diagnostics to verify AgentUX dependencies and configuration."""
@@ -59,29 +67,36 @@ def doctor() -> None:
 
     # Playwright
     try:
-        import playwright
-        ver = getattr(playwright, "__version__", "?")
-        all_ok &= _check("Playwright", True, f"v{ver}")
-    except ImportError:
+        from importlib.metadata import version as pkg_version
+
+        pw_ver = pkg_version("playwright")
+        all_ok &= _check("Playwright", True, f"v{pw_ver}")
+    except Exception:
         all_ok &= _check("Playwright", False, "pip install playwright && playwright install chromium")
 
     # Playwright browsers
     try:
         from playwright.sync_api import sync_playwright
+
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
             browser.close()
         all_ok &= _check("Chromium browser", True, "available")
-    except Exception as e:
+    except Exception:
         all_ok &= _check("Chromium browser", False, "run: playwright install chromium")
 
-    # OpenAI key
+    # API keys — these are OPTIONAL, not failures
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
-    _check("OpenAI API key", has_openai, "OPENAI_API_KEY" if has_openai else "not set (optional)")
+    if has_openai:
+        _check("OpenAI API key", True, "OPENAI_API_KEY set")
+    else:
+        _info("OpenAI API key", "not set — use --demo for mock runs, or set OPENAI_API_KEY")
 
-    # Anthropic key
     has_anthropic = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    _check("Anthropic API key", has_anthropic, "ANTHROPIC_API_KEY" if has_anthropic else "not set (optional)")
+    if has_anthropic:
+        _check("Anthropic API key", True, "ANTHROPIC_API_KEY set")
+    else:
+        _info("Anthropic API key", "not set — optional, set ANTHROPIC_API_KEY to use")
 
     # Data directory
     from agentux.core.config import default_data_dir
@@ -99,6 +114,7 @@ def doctor() -> None:
     # SQLite
     try:
         import sqlite3
+
         all_ok &= _check("SQLite", True, f"v{sqlite3.sqlite_version}")
     except Exception:
         all_ok &= _check("SQLite", False, "not available")
@@ -110,7 +126,11 @@ def doctor() -> None:
     console.print()
     if all_ok:
         console.print("[bold green]All checks passed![/] You're ready to go.\n")
-        console.print("  [dim]Try:[/] agentux run https://example.com --task 'find pricing' --demo")
+        if not has_openai and not has_anthropic:
+            console.print("  [dim]No API key set. Use --demo to run with mock backend:[/]")
+            console.print("  agentux run https://example.com --task 'find pricing' --demo\n")
+        else:
+            console.print("  [dim]Try:[/] agentux run https://example.com --task 'find pricing'\n")
     else:
         console.print("[bold yellow]Some checks failed.[/] Fix the issues above and run again.")
         console.print("  [dim]Tip:[/] Use --demo flag to run without API keys.\n")
