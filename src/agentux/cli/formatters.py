@@ -13,13 +13,11 @@ from agentux.utils.console import console, format_duration, format_tokens, score
 
 
 def print_scorecard(scores: ScoreCard) -> None:
-    """Print scorecard with scores and actionable recommendations."""
+    """Print scorecard only — no extra output."""
     table = Table(show_header=True, header_style="bold cyan", box=None, pad_edge=False)
     table.add_column("Metric", style="bold")
     table.add_column("Score", justify="right", width=8)
     table.add_column("Detail", style="dim")
-
-    all_recommendations: list[str] = []
 
     for _key, result in scores.as_dict().items():
         style = score_style(result.value)
@@ -28,19 +26,182 @@ def print_scorecard(scores: ScoreCard) -> None:
             Text(f"{result.value:.0f}", style=style),
             result.explanation[:70],
         )
-        # Collect recommendations from each metric
-        recs = result.inputs.get("recommendations", [])
-        if isinstance(recs, list):
-            all_recommendations.extend(recs)
 
     panel = Panel(table, title="[bold cyan]Scorecard[/]", border_style="cyan", padding=(1, 2))
     console.print(panel)
 
-    # Print actionable recommendations
-    if all_recommendations:
-        console.print("\n[bold yellow]Recommendations:[/]")
-        for rec in all_recommendations[:8]:
-            console.print(f"  [yellow]-[/] {rec}")
+
+def print_run_analysis(trace: RunTrace, analysis: dict[str, Any]) -> None:
+    """Print Observations, Insights, and Recommendations as three clear sections."""
+    scores = trace.scores
+    observations: list[str] = []
+    insights: list[str] = []
+    recommendations: list[str] = []
+
+    # ── Gather observations (facts about what happened) ──
+
+    observations.append(f"{trace.step_count} steps taken, {trace.total_tokens} tokens used")
+
+    # Affordance coverage
+    total_aff = len([a for a in trace.affordances if a.relevant])
+    from agentux.core.models import AffordanceStatus
+
+    interacted_aff = len(
+        [a for a in trace.affordances if a.relevant and a.status == AffordanceStatus.INTERACTED]
+    )
+    if total_aff > 0:
+        pct = interacted_aff / total_aff * 100
+        observations.append(
+            f"Agent interacted with {interacted_aff}/{total_aff} available affordances ({pct:.0f}%)"
+        )
+
+    action_steps = [s for s in trace.steps if s.action_type not in ("read", "done", "")]
+    if action_steps:
+        succeeded = sum(1 for s in action_steps if s.success)
+        observations.append(f"{succeeded}/{len(action_steps)} actions succeeded")
+
+    errors = sum(1 for s in trace.steps if s.errors)
+    if errors:
+        observations.append(f"{errors} steps had errors")
+    else:
+        observations.append("No errors encountered")
+
+    backtracks = sum(1 for s in trace.steps if s.action_type == "back")
+    if backtracks:
+        observations.append(f"{backtracks} backtracks during navigation")
+
+    # ── Generate insights (why things happened) ──
+
+    if trace.step_count < 4 and trace.success:
+        insights.append(
+            "Agent declared done very quickly — "
+            "may not have explored enough to truly evaluate the surface"
+        )
+
+    if total_aff > 3 and interacted_aff / max(total_aff, 1) < 0.2:
+        insights.append(
+            "Very low interaction coverage suggests the surface may be hard to explore, "
+            "or the agent's task was too narrow for a thorough evaluation"
+        )
+
+    if errors > 0:
+        recovered = sum(
+            1
+            for i, s in enumerate(trace.steps)
+            if (s.errors or not s.success)
+            and i + 1 < len(trace.steps)
+            and trace.steps[i + 1].success
+        )
+        if recovered > 0:
+            insights.append(
+                f"Agent recovered from {recovered}/{errors} errors — "
+                "surface provides usable error feedback"
+            )
+        elif errors >= 3:
+            insights.append(
+                "Multiple errors with no recovery — "
+                "error messages may not be guiding the agent toward fixes"
+            )
+
+    redundant = 0
+    seen: set[str] = set()
+    for step in trace.steps:
+        key = f"{step.action}:{step.action_type}"
+        if key in seen and step.action_type == "read":
+            redundant += 1
+        seen.add(key)
+    if redundant > 0:
+        insights.append(
+            f"Agent re-read the same content {redundant} time(s) — "
+            "information may not be clear enough on first read"
+        )
+
+    if (
+        not trace.success
+        and trace.failure_reason
+        and "max steps" in trace.failure_reason.lower()
+    ):
+            insights.append(
+                "Hit step limit — task may be too complex, "
+                "or the surface requires too many navigation steps"
+            )
+
+    if not insights:
+        if trace.step_count < 4:
+            insights.append("Too few steps for meaningful analysis")
+        else:
+            insights.append("Run completed without notable issues")
+
+    # ── Generate recommendations (what to do) ──
+
+    if total_aff > 3 and interacted_aff / max(total_aff, 1) < 0.3:
+        recommendations.append(
+            "Run with a more specific task to increase coverage, "
+            "e.g. --task 'use the clone and branch commands'"
+        )
+
+    if trace.step_count < 5:
+        recommendations.append(
+            "Increase --max-steps or use a more complex task to get a deeper evaluation"
+        )
+
+    low_scores = [(k, r) for k, r in scores.as_dict().items() if k != "aes" and r.value < 40]
+    for key, _result in low_scores[:3]:
+        if key == "discoverability":
+            recommendations.append(
+                "Improve navigation: add clearer headings, better link labels, "
+                "or reduce nesting depth so agents can find key sections faster"
+            )
+        elif key == "actionability":
+            recommendations.append(
+                "Fix broken interactions: check that buttons, links, and commands "
+                "work correctly and return useful feedback"
+            )
+        elif key == "recovery":
+            recommendations.append(
+                "Improve error handling: add descriptive error messages "
+                "that suggest next steps or alternative actions"
+            )
+        elif key == "efficiency":
+            recommendations.append(
+                "Reduce navigation friction: make key information accessible "
+                "in fewer clicks/steps, avoid deep page hierarchies"
+            )
+        elif key == "documentation_clarity":
+            recommendations.append(
+                "Improve content clarity: use clear headings, "
+                "add examples, and ensure key information is near the top"
+            )
+        elif key == "tool_clarity":
+            recommendations.append(
+                "Improve tool descriptions: add clear parameter docs, "
+                "examples in help text, and descriptive command names"
+            )
+
+    if errors == 0 and scores.recovery.value <= 50:
+        recommendations.append(
+            "Run a task likely to trigger errors "
+            "(e.g. 'use a nonexistent command') to test recovery behavior"
+        )
+
+    if not recommendations:
+        recommendations.append(
+            "Run with a harder or broader task to stress-test more of the surface"
+        )
+
+    # ── Print all three sections ──
+
+    console.print("\n[bold]Observations:[/]")
+    for obs in observations:
+        console.print(f"  [dim]-[/] {obs}")
+
+    console.print("\n[bold cyan]Insights:[/]")
+    for ins in insights:
+        console.print(f"  [cyan]-[/] {ins}")
+
+    console.print("\n[bold yellow]Recommendations:[/]")
+    for rec in recommendations:
+        console.print(f"  [yellow]-[/] {rec}")
 
 
 def print_run_summary(trace: RunTrace) -> None:

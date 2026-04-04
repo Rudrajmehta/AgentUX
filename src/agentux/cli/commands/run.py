@@ -184,13 +184,16 @@ def run_command(
         runner.run(surface_adapter, agent_backend, task, target, max_steps, tags)
     )
 
+    from agentux.cli.formatters import print_run_analysis
+
     console.print()
     print_run_summary(trace)
 
-    # Only show scorecard if the run actually executed steps
+    # Only show scorecard + analysis if the run actually executed steps
     if trace.step_count > 0 and trace.scores.aes.value > 0:
         console.print()
         print_scorecard(trace.scores)
+        print_run_analysis(trace, analysis)
 
     # Save to database
     try:
@@ -199,8 +202,3 @@ def run_command(
         console.print(f"\n  [dim]Run saved: {trace.run_id}[/]")
     except Exception as e:
         console.print(f"\n  [warning]Could not save run: {e}[/]")
-
-    if analysis.get("all_insights"):
-        console.print("\n[bold]Insights:[/]")
-        for insight in analysis["all_insights"][:8]:
-            console.print(f"  [dim]-[/] {insight}")
