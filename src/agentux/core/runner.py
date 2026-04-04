@@ -117,7 +117,16 @@ class Runner:
                 else:
                     try:
                         result = await surface.act(decision.action, decision.params)
-                        if "Error" in result or "error" in result.lower()[:20]:
+                        # Detect failure signals in result text
+                        result_lower = result.lower()
+                        if (
+                            result.startswith("Error")
+                            or "not found" in result_lower
+                            or "error:" in result_lower[:50]
+                            or "failed" in result_lower[:50]
+                            or "blocked" in result_lower[:50]
+                            or "unknown action" in result_lower
+                        ):
                             success = False
                             errors.append(result[:200])
                     except Exception as e:

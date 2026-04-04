@@ -116,24 +116,36 @@ class CLISurface(Surface):
         return self._affordances
 
     def _parse_help_output(self, text: str) -> None:
-        """Extract commands and flags from help text."""
+        """Extract commands and flags from help text.
+
+        Uses two strategies:
+        1. Section-header based (for tools with 'Commands:', 'Options:' headers)
+        2. Fallback heuristic (for tools like git that use indented word+description)
+        """
         import re
 
         lines = text.split("\n")
         in_commands = False
         in_options = False
+        found_via_headers = False
 
+        # Strategy 1: section-header based parsing
         for line in lines:
             stripped = line.strip()
             lower = stripped.lower()
 
-            if any(kw in lower for kw in ["commands:", "subcommands:", "available commands"]):
+            if any(kw in lower for kw in [
+                "commands:", "subcommands:", "available commands",
+                "positional arguments:",
+            ]):
                 in_commands = True
                 in_options = False
+                found_via_headers = True
                 continue
-            if any(kw in lower for kw in ["options:", "flags:", "arguments:"]):
+            if any(kw in lower for kw in ["options:", "flags:", "optional arguments:"]):
                 in_options = True
                 in_commands = False
+                found_via_headers = True
                 continue
             if not stripped or stripped.startswith("---"):
                 in_commands = False
@@ -141,36 +153,62 @@ class CLISurface(Surface):
                 continue
 
             if in_commands:
-                match = re.match(r"\s{2,}(\w[\w-]*)\s*(.*)", line)
+                match = re.match(r"\s{2,}(\w[\w-]*)\s+(.*)", line)
                 if match:
                     cmd_name = match.group(1)
                     desc = match.group(2).strip()
-                    self._discovered_commands.add(cmd_name)
-                    self._affordances.append(
-                        Affordance(
-                            name=cmd_name,
-                            kind="command",
+                    if cmd_name not in self._discovered_commands:
+                        self._discovered_commands.add(cmd_name)
+                        self._affordances.append(Affordance(
+                            name=cmd_name, kind="command",
                             status=AffordanceStatus.DISCOVERED,
-                            relevant=True,
-                            notes=desc[:100],
-                        )
-                    )
+                            relevant=True, notes=desc[:100],
+                        ))
 
             if in_options:
                 match = re.match(r"\s{2,}(-[\w-]+(?:,\s*--[\w-]+)?)\s*(.*)", line)
                 if match:
                     flag_name = match.group(1).strip()
                     desc = match.group(2).strip()
-                    self._discovered_flags.add(flag_name)
-                    self._affordances.append(
-                        Affordance(
-                            name=flag_name,
-                            kind="flag",
+                    if flag_name not in self._discovered_flags:
+                        self._discovered_flags.add(flag_name)
+                        self._affordances.append(Affordance(
+                            name=flag_name, kind="flag",
                             status=AffordanceStatus.DISCOVERED,
-                            relevant=True,
-                            notes=desc[:100],
-                        )
-                    )
+                            relevant=True, notes=desc[:100],
+                        ))
+
+        # Strategy 2: fallback heuristic for unstructured help (e.g., git)
+        if not found_via_headers or not self._discovered_commands:
+            for line in lines:
+                # Match lines like "   command   Description text" (3+ space indent)
+                match = re.match(r"\s{2,}([a-z][\w-]*)\s{2,}(.*)", line)
+                if match:
+                    cmd_name = match.group(1)
+                    desc = match.group(2).strip()
+                    # Skip common noise words
+                    if cmd_name in ("usage", "see", "or", "and", "the", "for", "with"):
+                        continue
+                    if len(cmd_name) < 2 or len(cmd_name) > 30:
+                        continue
+                    if cmd_name not in self._discovered_commands:
+                        self._discovered_commands.add(cmd_name)
+                        self._affordances.append(Affordance(
+                            name=cmd_name, kind="command",
+                            status=AffordanceStatus.DISCOVERED,
+                            relevant=True, notes=desc[:100],
+                        ))
+
+            # Also extract flags from usage line and body
+            for match in re.finditer(r"(?:^|\s)(--?[a-zA-Z][\w-]*)", text):
+                flag = match.group(1)
+                if flag.startswith("--") and len(flag) > 3 and flag not in self._discovered_flags:
+                    self._discovered_flags.add(flag)
+                    self._affordances.append(Affordance(
+                        name=flag, kind="flag",
+                        status=AffordanceStatus.DISCOVERED,
+                        relevant=True,
+                    ))
 
     async def act(self, action: str, params: dict[str, Any] | None = None) -> str:
         params = params or {}

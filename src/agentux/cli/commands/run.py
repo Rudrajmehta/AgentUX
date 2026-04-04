@@ -84,6 +84,13 @@ def run_command(
         backend = "mock"
     config.ensure_dirs()
 
+    valid_surfaces = [s.value for s in SurfaceType]
+    if surface not in valid_surfaces:
+        console.print(
+            f"[error]Unknown surface type: '{surface}'[/]\n"
+            f"  Valid types: {', '.join(valid_surfaces)}\n"
+        )
+        raise SystemExit(1)
     surface_type = SurfaceType(surface)
     tags = list(tag) if tag else []
 
