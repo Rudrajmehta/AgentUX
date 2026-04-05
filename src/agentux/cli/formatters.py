@@ -31,8 +31,8 @@ def print_scorecard(scores: ScoreCard) -> None:
     console.print(panel)
 
 
-def print_run_analysis(trace: RunTrace, analysis: dict[str, Any]) -> None:
-    """Print Observations, Insights, and Recommendations as three clear sections."""
+def _deprecated_print_run_analysis(trace: RunTrace, analysis: dict[str, Any]) -> None:
+    """Replaced by LLM-powered analysis in analyzers/llm_analyzer.py."""
     scores = trace.scores
     observations: list[str] = []
     insights: list[str] = []

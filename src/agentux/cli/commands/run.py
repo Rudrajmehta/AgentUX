@@ -184,8 +184,6 @@ def run_command(
         runner.run(surface_adapter, agent_backend, task, target, max_steps, tags)
     )
 
-    from agentux.cli.formatters import print_run_analysis
-
     console.print()
     print_run_summary(trace)
 
@@ -193,7 +191,36 @@ def run_command(
     if trace.step_count > 0 and trace.scores.aes.value > 0:
         console.print()
         print_scorecard(trace.scores)
-        print_run_analysis(trace, analysis)
+
+        # LLM-powered analysis (uses the same backend)
+        if not demo:
+            from agentux.analyzers.llm_analyzer import analyze_trace_with_llm
+
+            console.print("\n  [dim]Analyzing trace...[/]")
+            llm_analysis = asyncio.run(analyze_trace_with_llm(trace, config))
+        else:
+            from agentux.analyzers.llm_analyzer import _fallback_analysis
+
+            llm_analysis = _fallback_analysis(trace)
+
+        # Print the three sections
+        if llm_analysis.get("observations"):
+            console.print("\n[bold]Observations:[/]")
+            for obs in llm_analysis["observations"]:
+                console.print(f"  [dim]-[/] {obs}")
+
+        if llm_analysis.get("insights"):
+            console.print("\n[bold cyan]Insights:[/]")
+            for ins in llm_analysis["insights"]:
+                console.print(f"  [cyan]-[/] {ins}")
+
+        if llm_analysis.get("recommendations"):
+            console.print("\n[bold yellow]Recommendations:[/]")
+            for rec in llm_analysis["recommendations"]:
+                console.print(f"  [yellow]-[/] {rec}")
+
+        # Merge LLM analysis into the analysis dict for storage
+        analysis["llm_analysis"] = llm_analysis
 
     # Save to database
     try:
