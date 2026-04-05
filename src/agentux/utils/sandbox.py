@@ -76,15 +76,29 @@ def is_command_safe(command: str, extra_blocked: list[str] | None = None) -> tup
 
 
 def create_sandbox_env(sandbox_path: Path, allow_network: bool = False) -> dict[str, str]:
-    """Create a restricted environment for sandboxed execution."""
+    """Create a restricted environment for sandboxed execution.
+
+    Passes through the real HOME (for tool configs like ~/.mem0, ~/.npmrc)
+    and all API key env vars. The sandbox_path is used as the working
+    directory, not as HOME — tools need their real config files.
+    """
     env = {
-        "HOME": str(sandbox_path),
+        "HOME": os.environ.get("HOME", str(sandbox_path)),
         "TMPDIR": str(sandbox_path / "tmp"),
         "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
         "TERM": os.environ.get("TERM", "xterm-256color"),
         "LANG": os.environ.get("LANG", "en_US.UTF-8"),
     }
     (sandbox_path / "tmp").mkdir(exist_ok=True)
+
+    # Pass through API keys and common tool credentials
+    for key in os.environ:
+        if any(
+            key.endswith(suffix) or key.startswith(prefix)
+            for suffix in ("_API_KEY", "_TOKEN", "_SECRET", "_KEY")
+            for prefix in ("MEM0_", "OPENAI_", "ANTHROPIC_", "GROQ_", "npm_", "NODE_", "XDG_")
+        ):
+            env[key] = os.environ[key]
     if not allow_network:
         # Signal to child processes (convention, not enforcement)
         env["AGENTUX_SANDBOX"] = "1"
