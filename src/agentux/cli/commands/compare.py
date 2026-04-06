@@ -33,9 +33,11 @@ def compare_command(
     surface_b: str = typer.Option(
         "markdown", "--surface-b", "-sb", help="Surface type for target B"
     ),
-    backend: str = typer.Option("openai", "--backend", "-b", help="Agent backend"),
+    backend: str = typer.Option(
+        "", "--backend", "-b", help="Backend override (uses config default)"
+    ),
     model: str = typer.Option("", "--model", "-m", help="Model override"),
-    max_steps: int = typer.Option(25, "--max-steps", help="Max steps per run"),
+    max_steps: int = typer.Option(0, "--max-steps", help="Max steps per run (0 = config default)"),
     demo: bool = typer.Option(False, "--demo", help="Use mock backend"),
     config_path: str | None = typer.Option(None, "--config", "-c", help="Config file"),
 ) -> None:
@@ -52,6 +54,14 @@ def compare_command(
     config = load_config(_Path(config_path) if config_path else None)
     if model:
         config.backend.model = model
+    if backend:
+        config.backend.name = backend
+    else:
+        backend = config.backend.name
+    if max_steps > 0:
+        config.max_steps = max_steps
+    else:
+        max_steps = config.max_steps
     if demo:
         config.demo_mode = True
         backend = "mock"
