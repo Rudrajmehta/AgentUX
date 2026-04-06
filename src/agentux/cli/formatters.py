@@ -348,14 +348,14 @@ def print_alerts_table(alerts: list[dict[str, Any]]) -> None:
 
 def print_runs_table(runs: list[dict[str, Any]]) -> None:
     """Print runs in a table."""
-    table = Table(show_header=True, header_style="bold cyan")
-    table.add_column("Run ID", width=14)
-    table.add_column("Surface", width=10)
-    table.add_column("Target", width=30)
-    table.add_column("AES", justify="right", width=6)
-    table.add_column("Status", width=8)
-    table.add_column("Steps", justify="right", width=6)
-    table.add_column("Time", style="dim", width=18)
+    table = Table(show_header=True, header_style="bold cyan", show_lines=False)
+    table.add_column("Run ID", min_width=12, no_wrap=True)
+    table.add_column("Surface", width=8)
+    table.add_column("Target", max_width=30, overflow="ellipsis")
+    table.add_column("AES", justify="right", width=5)
+    table.add_column("Status", width=6)
+    table.add_column("Steps", justify="right", width=5)
+    table.add_column("Time", style="dim", width=16)
 
     for run in runs:
         aes = run.get("aes_score")
