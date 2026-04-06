@@ -61,7 +61,7 @@ def run_command(
         help="Surface type: browser, markdown, cli, mcp",
     ),
     backend: str = typer.Option(
-        "openai", "--backend", "-b", help="Agent backend: openai, anthropic, mock"
+        "", "--backend", "-b", help="Backend override (uses config default)"
     ),
     model: str = typer.Option("", "--model", "-m", help="Model name override"),
     base_url: str = typer.Option(
