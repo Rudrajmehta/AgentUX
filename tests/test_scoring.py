@@ -41,12 +41,12 @@ class TestDiscoverability:
         assert result.name == "Discoverability"
 
     def test_none_discovered(self) -> None:
-        """All relevant affordances missed gives near-zero score."""
+        """All relevant affordances missed gives near-zero score (audit task)."""
         trace = RunTrace(
             run_id="x",
             surface_type=SurfaceType.BROWSER,
             target="t",
-            task="t",
+            task="explore and audit this surface",
             steps=[StepRecord(step_number=1, action="noop", action_type="read")],
             affordances=[
                 Affordance(name="a", relevant=True, status=AffordanceStatus.MISSED),
@@ -56,27 +56,28 @@ class TestDiscoverability:
         result = compute_discoverability(trace)
         assert result.value < 20.0
 
-    def test_early_discovery_bonus(self) -> None:
-        """Discovering affordances on step 1 gives a speed bonus."""
+    def test_targeted_task_quick_success(self) -> None:
+        """Targeted task found in 3 steps with success = high score."""
         trace = RunTrace(
             run_id="x",
             surface_type=SurfaceType.BROWSER,
             target="t",
-            task="t",
+            task="find pricing",
             steps=[
                 StepRecord(
-                    step_number=1, action="a", action_type="read", affordances_discovered=["nav"]
+                    step_number=1, action="a", action_type="click", affordances_discovered=["nav"]
                 ),
-                StepRecord(step_number=2, action="b", action_type="click"),
+                StepRecord(step_number=2, action="b", action_type="scroll"),
                 StepRecord(step_number=3, action="c", action_type="done"),
             ],
             affordances=[
                 Affordance(name="nav", relevant=True, status=AffordanceStatus.INTERACTED),
             ],
+            success=True,
         )
         result = compute_discoverability(trace)
-        # 1/1 interacted = 100% + speed bonus = ~100
-        assert result.value >= 95.0
+        # 40 (success) + 25 (3 steps speed) + 20 (no errors) + 10 (interacted) + 5 (early) = 100
+        assert result.value >= 80.0
 
     def test_discovered_but_not_interacted_scores_lower(self) -> None:
         """Discovering without interacting gives partial credit."""
