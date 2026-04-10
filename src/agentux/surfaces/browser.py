@@ -75,6 +75,38 @@ class BrowserSurface(Surface):
         if self._playwright:
             await self._playwright.stop()
 
+    def _mark_interacted(
+        self,
+        text: str = "",
+        selector: str = "",
+        url: str = "",
+    ) -> None:
+        """Mark matching affordances as INTERACTED when the agent uses them."""
+        text_lower = text.lower().strip() if text else ""
+        selector_lower = selector.lower().strip() if selector else ""
+        url_lower = url.lower().strip() if url else ""
+
+        for aff in self._affordances:
+            if aff.status == AffordanceStatus.INTERACTED:
+                continue  # already marked
+            name_lower = aff.name.lower()
+            href = (aff.metadata.get("href", "") or "").lower()
+            aff_selector = (aff.metadata.get("selector", "") or "").lower()
+
+            matched = False
+            # Match by text content
+            if text_lower and (text_lower in name_lower or name_lower in text_lower):
+                matched = True
+            # Match by URL/href
+            if url_lower and href and (url_lower in href or href in url_lower):
+                matched = True
+            # Match by selector
+            if selector_lower and aff_selector and selector_lower in aff_selector:
+                matched = True
+
+            if matched:
+                aff.status = AffordanceStatus.INTERACTED
+
     async def discover(self) -> list[Affordance]:
         if not self._page:
             raise BrowserSurfaceError("Browser not initialized")
@@ -130,8 +162,10 @@ class BrowserSurface(Surface):
                 text = params.get("text", "")
                 if text:
                     await self._page.get_by_text(text, exact=False).first.click()
+                    self._mark_interacted(text=text)
                 elif selector:
                     await self._page.click(selector)
+                    self._mark_interacted(selector=selector)
                 else:
                     return "Error: click requires 'selector' or 'text' param"
                 await self._page.wait_for_load_state("domcontentloaded")
@@ -146,12 +180,14 @@ class BrowserSurface(Surface):
                 await self._page.goto(url, wait_until="domcontentloaded")
                 self._current_url = self._page.url
                 self._navigation_history.append(self._current_url)
+                self._mark_interacted(url=url)
                 return f"Navigated to: {self._current_url}"
 
             elif action == "type":
                 selector = params.get("selector", "input")
                 text = params.get("text", "")
                 await self._page.fill(selector, text)
+                self._mark_interacted(selector=selector)
                 return f"Typed '{text}' into {selector}"
 
             elif action == "scroll":

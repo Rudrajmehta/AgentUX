@@ -232,6 +232,17 @@ class CLISurface(Surface):
                         )
                     )
 
+    def _mark_command_interacted(self, command: str) -> None:
+        """Mark affordances as INTERACTED when the agent executes a command."""
+        cmd_lower = command.lower()
+        for aff in self._affordances:
+            if aff.status == AffordanceStatus.INTERACTED:
+                continue
+            name_lower = aff.name.lower()
+            # Match command names and flags in the executed command
+            if name_lower in cmd_lower and aff.kind in ("command", "flag"):
+                aff.status = AffordanceStatus.INTERACTED
+
     async def act(self, action: str, params: dict[str, Any] | None = None) -> str:
         params = params or {}
 
@@ -243,6 +254,8 @@ class CLISurface(Surface):
             if not command.startswith(self.target):
                 command = f"{self.target} {command}"
             result = await self._run_command(command)
+            # Mark matching affordances as interacted
+            self._mark_command_interacted(command)
             output = result["stdout"]
             if result["stderr"]:
                 output += f"\nSTDERR: {result['stderr']}"
