@@ -170,11 +170,16 @@ class Runner:
 
                 if decision.done:
                     reason = decision.done_reason or ""
+                    reason_lower = reason.lower()
+                    # Default to success unless the LLM explicitly says it failed
+                    failed_keywords = [
+                        "fail", "could not", "unable", "cannot",
+                        "not found", "gave up", "impossible",
+                    ]
+                    is_failure = any(kw in reason_lower for kw in failed_keywords)
                     trace.complete(
-                        success="success" in reason.lower()
-                        or "complete" in reason.lower()
-                        or decision.uncertainty < 0.3,
-                        failure_reason=reason if not success else None,
+                        success=not is_failure,
+                        failure_reason=reason if is_failure else None,
                     )
                     break
             else:
